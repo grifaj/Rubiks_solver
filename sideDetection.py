@@ -30,13 +30,13 @@ def showImg(label, img):
     img = cv.resize(img, dimensions, interpolation=cv.INTER_AREA)
     cv.imshow(label,img)
 
-cube = cv.imread('cube2.JPG')
+cube = cv.imread('cs310\github\Rubiks_solver\cube2.JPG')
 
 
 # set greyscale, blur and find edges
 grey = cv.cvtColor(cube, cv.COLOR_BGR2GRAY)
 canny = cv.Canny(grey, 80, 120)
-kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE,(11,11))
+kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE,(21,21))
 dilated = cv.dilate(canny, kernel)
 
 showImg('edges',dilated)
@@ -63,18 +63,18 @@ for i in range(len(contours)):
     squareness = test_area/(area+1) if test_area > area else area/(test_area+1) # should be 1 for perfect square
 
     #check area and squareness is within bounds and that contour has no parent
-    if area > 10000 and area < 100000 and squareness < 100 :
-        #print(i)
-        #print('area',area)
-        #print('perim', perimeter)
-        #print('squareness',squareness)
-        #print('parent', parent)
-        #print()
+    if area > 10000 and area < 1000000 and squareness < 100 and parent == 5:
+        print(i)
+        print('area',area)
+        print('perim', perimeter)
+        print('squareness',squareness)
+        print('parent', parent)
+        print()
         
 
-       # blank = np.zeros(cube.shape, dtype='uint8')
+        #blank = np.zeros(cube.shape, dtype='uint8')
         #cv.drawContours(blank, contours, i, (0,255,0), 2)
-      # showImg(str(i),blank)
+        #showImg(str(i),blank)
 
         # add selected contours to image
         cv.drawContours(cube,[contour],0,(0, 255, 0),2)
@@ -92,4 +92,4 @@ print(len(cubies), 'cubies found')
 
 showImg('output',cube)
 
-cv.waitKey(0)
+cv.waitKey(10000)
