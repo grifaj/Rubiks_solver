@@ -30,7 +30,7 @@ def showImg(label, img):
     img = cv.resize(img, dimensions, interpolation=cv.INTER_AREA)
     cv.imshow(label,img)
 
-cube = cv.imread('cs310\github\Rubiks_solver\cube2.JPG')
+cube = cv.imread('C:\\Users\\Alfie\\Documents\\uni_work\\year3\\cs310\\github\Rubiks_solver\\cube2.JPG')
 
 
 # set greyscale, blur and find edges
