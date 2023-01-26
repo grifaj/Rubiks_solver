@@ -7,7 +7,7 @@ class RubiksCube:
     def __init__(
         self,
         state = None,
-        cube = [[[]]]
+        array = [[[]]]
     ):
 
         if state is None:
@@ -25,22 +25,22 @@ class RubiksCube:
                 for k in range(3):
                     blank[i][j][k] = state[q]
                     q +=1
-        self.cube = blank
+        self.array = blank
 
     # generates default array of cube along with colour choice
     def getArray(self):
-        colours = ['w', 'o', 'g', 'r', 'b', 'y']
+        colours = ["w", "y", "r", "o", "b", "g"] 
         cube = [[[colours[i]]*3 for j in range(3)] for i in range(6)]
         return cube
 
     # put cube in default state of solved
     def setSolved(self):
-        self.cube = self.getArray()
+        self.array = self.getArray()
 
     # turn cube into string represention for easy storage
     def stringify(self):
         output = ''
-        for side in self.cube:
+        for side in self.array:
             for row in side:
                 for cubie in row:
                     output += cubie
@@ -49,152 +49,164 @@ class RubiksCube:
 
     # test if cube is solved, returns boolean
     def solved(self):
-        return np.array_equal(self.cube, self.getArray())
+        return np.array_equal(self.array, self.getArray())
     
     #################################################
     ###### stolen, need to implement by self ########
 
     # print out cube nicely
     def printCube(self):
-        spacing = f'{" " * (len(str(self.cube[0][0])) + 2)}'
-        l1 = '\n'.join(spacing + str(c) for c in self.cube[0])
-        l2 = '\n'.join('  '.join(str(self.cube[i][j]) for i in range(1,5)) for j in range(len(self.cube[0])))
-        l3 = '\n'.join(spacing + str(c) for c in self.cube[5])
+        order = [5,3,4,2]
+        spacing = f'{" " * (len(str(self.array[0][0])) + 2)}'
+        l1 = '\n'.join(spacing + str(c) for c in self.array[1])
+        l2 = '\n'.join('  '.join(str(self.array[i][j]) for i in order) for j in range(len(self.array[0])))
+        l3 = '\n'.join(spacing + str(c) for c in self.array[0])
         print(f'{l1}\n\n{l2}\n\n{l3}')
 
-    def shuffle(self, l_rot = 5, u_rot = 100):
-        """
-        Input: l_rot - integer representing the lower bounds of amount of moves (Default = 5) [OPTIONAL]
-               u_rot - integer representing the upper bounds of amount of moves (Default = 100) [OPTIONAL]
-        Description: Shuffles rubiks cube to random solvable state
-        Output: None
-        """
-        moves = randint(l_rot, u_rot)
-        actions = [
-            ('h', 0),
-            ('h', 1),
-            ('v', 0),
-            ('v', 1),
-            ('s', 0),
-            ('s', 1)
-        ]
-        for i in range(moves):
-            a = choice(actions)
-            j = randint(0, 2)
-            if a[0] == 'h':
-                self.horizontal_twist(j, a[1])
-            elif a[0] == 'v':
-                self.vertical_twist(j, a[1])
-            elif a[0] == 's':
-                self.side_twist(j, a[1])
+    def shuffle(self, numMoves):
 
-    def horizontal_twist(self, row, direction):
-        """
-        Input: row - integer representing which row you would like to twist
-               direction - boolean representing if you want to twist right or left [left - 0, right - 1]
-        Description: Twist desired row of rubiks cube
-        Output: None
-        """
-        if row < len(self.cube[0]):
-            if direction == 0: #Twist left
-                self.cube[1][row], self.cube[2][row], self.cube[3][row], self.cube[4][row] = (self.cube[2][row],
-                                                                                              self.cube[3][row],
-                                                                                              self.cube[4][row],
-                                                                                              self.cube[1][row])
+        for _ in range(numMoves):
+            f = choice(['u','l','r','f','d','b'])
+            d = choice(['c', 'ac'])
 
-            elif direction == 1: #Twist right
-                self.cube[1][row], self.cube[2][row], self.cube[3][row], self.cube[4][row] = (self.cube[4][row],
-                                                                                              self.cube[1][row],
-                                                                                              self.cube[2][row],
-                                                                                              self.cube[3][row])
-            else:
-                print(f'ERROR - direction must be 0 (left) or 1 (right)')
-                return
-            #Rotating connected face
-            if direction == 0: #Twist left
-                if row == 0:
-                    self.cube[0] = [list(x) for x in zip(*reversed(self.cube[0]))] #Transpose top
-                elif row == len(self.cube[0]) - 1:
-                    self.cube[5] = [list(x) for x in zip(*reversed(self.cube[5]))] #Transpose bottom
-            elif direction == 1: #Twist right
-                if row == 0:
-                    self.cube[0] = [list(x) for x in zip(*self.cube[0])][::-1] #Transpose top
-                elif row == len(self.cube[0]) - 1:
-                    self.cube[5] = [list(x) for x in zip(*self.cube[5])][::-1] #Transpose bottom
-        else:
-            print(f'ERROR - desired row outside of rubiks cube range. Please select a row between 0-{len(self.cube[0])-1}')
-            return
+            if f == 'u':
+                self.up() if d == 'c' else self.up_prime()
+            if f == 'l':
+                self.left() if d == 'c' else self.left_prime()
+            if f == 'r':
+                self.right() if d == 'c' else self.right_prime()
+            if f == 'f':
+                self.front() if d == 'c' else self.front_prime()
+            if f == 'd':
+                self.down() if d == 'c' else self.down_prime()
+            if f == 'b':
+                self.back() if d == 'c' else self.back_prime()
 
-    def vertical_twist(self, column, direction):
-        """
-        Input: column - integer representing which column you would like to twist
-               direction - boolean representing if you want to twist up or down [down - 0, up - 1]
-        Description: Twist desired column of rubiks cube
-        Output: None
-        """
-        if column < len(self.cube[0]):
-            for i in range(len(self.cube[0])):
-                if direction == 0: #Twist down
-                    self.cube[0][i][column], self.cube[2][i][column], self.cube[4][-i-1][-column-1], self.cube[5][i][column] = (self.cube[4][-i-1][-column-1],
-                                                                                                                                self.cube[0][i][column],
-                                                                                                                                self.cube[5][i][column],
-                                                                                                                                self.cube[2][i][column])
-                elif direction == 1: #Twist up
-                    self.cube[0][i][column], self.cube[2][i][column], self.cube[4][-i-1][-column-1], self.cube[5][i][column] = (self.cube[2][i][column],
-                                                                                                                                self.cube[5][i][column],
-                                                                                                                                self.cube[0][i][column],
-                                                                                                                                self.cube[4][-i-1][-column-1])
-                else:
-                    print(f'ERROR - direction must be 0 (down) or 1 (up)')
-                    return
-            #Rotating connected face
-            if direction == 0: #Twist down
-                if column == 0:
-                    self.cube[1] = [list(x) for x in zip(*self.cube[1])][::-1] #Transpose left
-                elif column == len(self.cube[0]) - 1:
-                    self.cube[3] = [list(x) for x in zip(*self.cube[3])][::-1] #Transpose right
-            elif direction == 1: #Twist up
-                if column == 0:
-                    self.cube[1] = [list(x) for x in zip(*reversed(self.cube[1]))] #Transpose left
-                elif column == len(self.cube[0]) - 1:
-                    self.cube[3] = [list(x) for x in zip(*reversed(self.cube[3]))] #Transpose right
-        else:
-            print(f'ERROR - desired column outside of rubiks cube range. Please select a column between 0-{len(self.cube[0])-1}')
-            return
+    def front(self):
+        cube = np.array(self.array)
+        # make temp of top edge
+        temp = np.copy(cube[3, 2, :])
+        #move left edge to top edge
+        cube[3, 2, :] = np.flip(cube[5, :, 2])
+        # move bottom edge to left edge
+        cube[5, :, 2] = cube[2, 0, :]
+        # move right edge to bottom edge
+        cube[2, 0, :] = np.flip(cube[4, :, 0])
+        # move top edge to right
+        cube[4, :, 0] = temp
+        # rotate front face
+        cube[0, :, :] = np.rot90(cube[0, :, :], -1)
+        self.array = cube
 
-    def side_twist(self, column, direction):
-        """
-        Input: column - integer representing which column you would like to twist
-               direction - boolean representing if you want to twist up or down [down - 0, up - 1]
-        Description: Twist desired side column of rubiks cube
-        Output: None
-        """
-        if column < len(self.cube[0]):
-            for i in range(len(self.cube[0])):
-                if direction == 0: #Twist down
-                    self.cube[0][column][i], self.cube[1][-i-1][column], self.cube[3][i][-column-1], self.cube[5][-column-1][-1-i] = (self.cube[3][i][-column-1],
-                                                                                                                                      self.cube[0][column][i],
-                                                                                                                                      self.cube[5][-column-1][-1-i],
-                                                                                                                                      self.cube[1][-i-1][column])
-                elif direction == 1: #Twist up
-                    self.cube[0][column][i], self.cube[1][-i-1][column], self.cube[3][i][-column-1], self.cube[5][-column-1][-1-i] = (self.cube[1][-i-1][column],
-                                                                                                                                      self.cube[5][-column-1][-1-i],
-                                                                                                                                      self.cube[0][column][i],
-                                                                                                                                      self.cube[3][i][-column-1])
-                else:
-                    print(f'ERROR - direction must be 0 (down) or 1 (up)')
-                    return
-            #Rotating connected face
-            if direction == 0: #Twist down
-                if column == 0:
-                    self.cube[4] = [list(x) for x in zip(*reversed(self.cube[4]))] #Transpose back
-                elif column == len(self.cube[0]) - 1:
-                    self.cube[2] = [list(x) for x in zip(*reversed(self.cube[2]))] #Transpose top
-            elif direction == 1: #Twist up
-                if column == 0:
-                    self.cube[4] = [list(x) for x in zip(*self.cube[4])][::-1] #Transpose back
-                elif column == len(self.cube[0]) - 1:
-                    self.cube[2] = [list(x) for x in zip(*self.cube[2])][::-1] #Transpose top
-        else:
-            print(f'ERROR - desired column outside of rubiks cube range. Please select a column between 0-{len(self.cube[0])-1}')
-            return
+    def front_prime(self):
+        # rotate clockwise three times
+        for _ in range(3):
+            self.front()
+
+    def right(self):
+        cube = np.array(self.array)
+        # make temp of top edge
+        temp = np.copy(cube[3, :, 2])
+        #move front edge to top edge
+        cube[3, :, 2] = cube[0, :, 2]
+        # move bottom edge to front edge
+        cube[0, :, 2] = cube[2, :, 2]
+        # move back edge to bottom edge
+        cube[2, :, 2] = np.flip(cube[1, :, 0])
+        # move top edge to back edge
+        cube[1, :, 0] = np.flip(temp)
+        # rotate right face
+        cube[4, :, :] = np.rot90(cube[4, :, :],-1)
+        self.array = cube
+
+    def right_prime(self):
+        # rotate clockwise three times
+        for _ in range(3):
+            self.right()
+
+    def left(self):
+        cube = np.array(self.array)
+        # make temp of top edge
+        temp = np.copy(cube[3, :, 0])
+        # move back edge to top edge
+        cube[3, :, 0] = np.flip(cube[1, :, 2])
+        # move bottom edge to back edge
+        cube[1, :, 2] = np.flip(cube[2, :, 0])
+        # move front edge to bottom edge
+        cube[2, :, 0] = cube[0, :, 0]
+        # move top edge to front edge
+        cube[0, :, 0] = temp
+        # rotate left face
+        cube[5, :, :] = np.rot90(cube[5, :, :],-1)
+        self.array = cube
+
+
+    def left_prime(self):
+        # rotate clockwise three times
+        for _ in range(3):
+            self.left()
+
+    def up(self):
+        cube = np.array(self.array)
+        # make temp of front
+        temp = np.copy(cube[0, 0, :])
+        # move right to front
+        cube[0, 0, :] = cube[4, 0, :]
+        # move back to right
+        cube[4, 0, :] = cube[1, 0, :]
+        # move left to back
+        cube[1, 0, :] = cube[5, 0, :]
+        # move front to left
+        cube[5, 0, :] = temp
+        # rotate up face
+        cube[3, :, :] = np.rot90(cube[3, :, :],-1)
+        self.array = cube
+
+    def up_prime(self):
+        # rotate clockwise three times
+        for _ in range(3):
+            self.up()
+
+    def down(self):
+        cube = np.array(self.array)
+        # make temp of front
+        temp = np.copy(cube[0, 2, :])
+        # move left to front
+        cube[0, 2, :] = cube[5, 2, :]
+        # move back to left
+        cube[5, 2, :] = cube[1, 2, :]
+        # move right to back
+        cube[1, 2, :] = cube[4, 2, :]
+        # move front to right
+        cube[4, 2, :] = temp
+        # rotate down face
+        cube[2, :, :] = np.rot90(cube[2, :, :],-1)
+        self.array = cube
+
+
+    def down_prime(self):
+        # rotate clockwise three times
+        for _ in range(3):
+            self.down()
+
+    def back(self):
+        cube = np.array(self.array)
+        # make temp of top
+        temp = np.copy(cube[3, 0, :])
+        # move right to top
+        cube[3, 0, :] = cube[4, :, 2]
+        # move bottom to right
+        cube[4, :, 2] = np.flip(cube[2, 2, :])
+        # move left to bottom
+        cube[2, 2, :] = cube[5, :, 0]
+        # move top to left
+        cube[5, :, 0] = np.flip(temp)
+        # rotate back face
+        cube[1, :, :] = np.rot90(cube[1, :, :],-1)
+        self.array = cube
+
+
+    def back_prime(self):
+        # rotate clockwise three times
+        for _ in range(3):
+            self.back()

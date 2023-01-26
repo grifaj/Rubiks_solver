@@ -1,8 +1,5 @@
 import numpy as np
 
-# colours of the cube
-colors = ["white", "yellow", "red", "orange", "blue", "green"]
-
 # remove none placeholders from slices
 def remove_None(cube):
     for a in cube:
@@ -18,11 +15,11 @@ def front(cube):
     # make temp of top edge
     temp = np.copy(cube[3, 2, :])
     #move left edge to top edge
-    cube[3, 2, :] = cube[5, :, 2]
+    cube[3, 2, :] = np.flip(cube[5, :, 2])
     # move bottom edge to left edge
     cube[5, :, 2] = cube[2, 0, :]
     # move right edge to bottom edge
-    cube[2, 0, :] = cube[4, :, 0]
+    cube[2, 0, :] = np.flip(cube[4, :, 0])
     # move top edge to right
     cube[4, :, 0] = temp
     # rotate front face
@@ -41,9 +38,9 @@ def right(cube):
     # move bottom edge to front edge
     cube[0, :, 2] = cube[2, :, 2]
     # move back edge to bottom edge
-    cube[2, :, 2] = cube[1, :, 0]
+    cube[2, :, 2] = np.flip(cube[1, :, 0])
     # move top edge to back edge
-    cube[1, :, 0] = temp
+    cube[1, :, 0] = np.flip(temp)
     # rotate right face
     cube[4, :, :] = np.rot90(cube[4, :, :],-1)
 
@@ -91,21 +88,46 @@ def up_prime(cube):
     for _ in range(3):
         up(cube)
 
-#def down(cube):
+def down(cube):
+    # make temp of front
+    temp = np.copy(cube[0, 2, :])
+    # move left to front
+    cube[0, 2, :] = cube[5, 2, :]
+    # move back to left
+    cube[5, 2, :] = cube[1, 2, :]
+    # move right to back
+    cube[1, 2, :] = cube[4, 2, :]
+    # move front to right
+    cube[4, 2, :] = temp
+    # rotate down face
+    cube[2, :, :] = np.rot90(cube[2, :, :],-1)
 
-#def down_prime(cube):
 
-#def back(cube):
+def down_prime(cube):
+    # rotate clockwise three times
+    for _ in range(3):
+        down(cube)
 
-#def back_prime(cube):
+def back(cube):
+    # make temp of top
+    temp = np.copy(cube[3, 0, :])
+    # move right to top
+    cube[3, 0, :] = cube[4, :, 2]
+    # move bottom to right
+    cube[4, :, 2] = np.flip(cube[2, 2, :])
+    # move left to bottom
+    cube[2, 2, :] = cube[5, :, 0]
+    # move top to left
+    cube[5, :, 0] = np.flip(temp)
+    # rotate back face
+    cube[1, :, :] = np.rot90(cube[1, :, :],-1)
 
-# Define a function to solve the cube
-#def solve_cube(cube):
-    # Solve the white cross
-    # Solve the white corners
-    # Perform the F2L algorithms
-    # Perform the OLL algorithms
-    # Perform the PLL algorithms
+
+def back_prime(cube):
+    # rotate clockwise three times
+    for _ in range(3):
+        back(cube)
+
 
 #convert from faces to slices
 def face2pieces(cube):
@@ -113,11 +135,19 @@ def face2pieces(cube):
     for i in range(3):
         slices[0][0][i] = [cube[3,2,i],(cube[5,0,2] if i == 0 else (cube[4,0,0] if i == 2 else None)),cube[0,0,i]] # top row first slice
         slices[0][1][i] = [(cube[5,1,2] if i == 0 else (cube[4,1,0] if i == 2 else None)),cube[0,1,i]] # middle row first slice
+        slices[0][2][i] =  [cube[2,0,i], (cube[5,2,2] if i ==0 else (cube[4,2,0] if i == 2 else None)),cube[0,2,i]] # bottom row first slice
 
-        #slices[0][2][0] = 
-    
+        slices[1][0][i] = [cube[3,1,i],(cube[5,0,1] if i == 0 else (cube[4,0,1] if i == 2 else None))] # top row middle slice
+        slices[1][2][i] = [cube[2,1,i], (cube[5,2,1] if i == 0 else (cube[4,2,1] if i == 2 else None))] #bottom row middle slice
+
+        slices[2][0][i] = [cube[3,0,i], (cube[5,0,0] if i == 0 else (cube[4,0,2] if i == 2 else None)), cube[1,0,2-i]] # top row back slice
+        slices[2][1][i] = [(cube[5,1,0] if i == 0 else (cube[4,1,2] if i == 2 else None)), cube[1,1,2-i]] # middle row back slice
+        slices[2][2][i] = [cube[2,2,i], (cube[5,2,0] if i == 0 else (cube[4,2,2] if i == 2 else None)), cube[1,2,2-i]] # bottom row back slice
+     
+    slices[1][1] = [[cube[5,1,1]],[],[cube[4,1,1]]] # middle row middle slice
+
     remove_None(slices)
-    print(slices)
+    return slices
 
 # solve white corners
 def white_corners(slices):
@@ -129,7 +159,7 @@ def white_corners(slices):
 
 
 # Initialize the cube in a solved state
-cube = np.array([[[colors[i]]*3 for j in range(3)] for i in range(6)])
+#cube = np.array([[[colors[i]]*3 for j in range(3)] for i in range(6)])
 
 cube = np.array([[['w0', 'w1', 'w2'],
   ['w3', 'w4', 'w5'],
@@ -155,6 +185,8 @@ cube = np.array([[['w0', 'w1', 'w2'],
   ['g3', 'g4', 'g5'],
   ['g6', 'g7', 'g8']]])
 
+face2pieces(cube)
+
 slices= [[[['o6','g2','w0'],['o7','w1'],['o8','b0','w2']],
         [['g5','w3'],['w4'],['b3','w5']],
         [['r0','g8','w6'],['r1','w7'],['r2','b6','w8']]],
@@ -167,5 +199,7 @@ slices= [[[['o6','g2','w0'],['o7','w1'],['o8','b0','w2']],
         [['g3','y5'],['y4'],['b5','y3']],
         [['r6','g6','y8'],['r7','y7'],['r8','b8','y6']]]]
 
+back(cube)
+print(cube)
 
 
