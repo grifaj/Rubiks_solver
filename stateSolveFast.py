@@ -1,6 +1,8 @@
 import numpy as np
 from cube import RubiksCube
 import json
+from tqdm import tqdm
+
 
 # remove none placeholders from slices
 def remove_None(cube):
@@ -34,19 +36,13 @@ def face2pieces(cube):
     remove_None(slices)
     return slices
 
-def build_heuristic_db(state, actions, max_moves = 20, heuristic = None):
-    """
-    Input: state - string representing the current state of the cube
-           actions -list containing tuples representing the possible actions that can be taken
-           max_moves - integer representing the max amount of moves alowed (default = 20) [OPTIONAL]
-           heuristic - dictionary containing current heuristic map (default = None) [OPTIONAL]
-    Description: create a heuristic map for determining the best path for solving a rubiks cube
-    Output: dictionary containing the heuristic map
-    """
-    if heuristic is None:
-        heuristic = {state: 0}
+def build_heuristic_db():
+    state = RubiksCube().stringify()
+    max_moves = 1
+    heuristic = {state: 0}
     que = [(state, 0)]
-    node_count = sum([len(actions) ** (x + 1) for x in range(max_moves + 1)])
+    node_count = sum([12 ** (x + 1) for x in range(max_moves + 1)])
+    #generate states and store # of moves from solved
     with tqdm(total=node_count, desc='Heuristic DB') as pbar:
         while True:
             if not que:
@@ -54,20 +50,18 @@ def build_heuristic_db(state, actions, max_moves = 20, heuristic = None):
             s, d = que.pop()
             if d > max_moves:
                 continue
-            for a in actions:
-                cube = RubiksCube(state=s)
-                if a[0] == 'h':
-                    cube.horizontal_twist(a[1], a[2])
-                elif a[0] == 'v':
-                    cube.vertical_twist(a[1], a[2])
-                elif a[0] == 's':
-                    cube.side_twist(a[1], a[2])
-                a_str = cube.stringify()
+            for next_action in generate_next_states(state):
+                a_str = next_action[0]
+                tmp = RubiksCube(state = next_action[0])
+                tmp.printCube()
                 if a_str not in heuristic or heuristic[a_str] > d + 1:
                     heuristic[a_str] = d + 1
                 que.append((a_str, d+1))
                 pbar.update(1)
-    return heuristic
+
+    # dump to file
+    with open('heuristic.json', 'w', encoding='utf-8') as f:
+        json.dump(heuristic,f,ensure_ascii=False,indent=4)
 
 
 # funtion to get x,y,z differece for each piece
@@ -88,10 +82,10 @@ def getSolvedPosition(piece):
 
 def heuristic(cube):
     cube_str = cube.stringify()
-    print(cube_str)
     if cube_str in heuristic_data:
         return heuristic_data[cube_str]
 
+    print(cube_str)
     print('past 6?')
     # state not in database, calculate manhatton distance instead
     pieces = face2pieces(cube.array)
@@ -181,6 +175,22 @@ def solve_cube(cube):
         path = []
         bound = cost # cost is min_threshold
 
+# print out cube nicely
+def printCube(cube):
+    order = [5,3,4,2]
+    spacing = f'{" " * (len(str(cube.array[0][0])) + 2)}'
+    l1 = '\n'.join(spacing + str(c) for c in cube.array[1][::-1])
+    l2 = ''
+    for j in range(len(cube.array[0])):
+        x = ''
+        for i in order:
+            x +=''.join(str(np.rot90(np.array(cube.array[5][j]))))+'  '
+            x +=''.join(str(cube.array[i][j]))+'  '
+        l2 +='\n'+x
+
+    l3 = '\n'.join(spacing + str(c) for c in cube.array[0])
+    print(f'{l1}\n{l2}\n\n{l3}')
+
 ######################## main ##################################
 
 
@@ -191,10 +201,13 @@ with open('heuristic.json') as f:
 print('data loaded')
 
 cube = RubiksCube()
-heuristic(cube)
+#build_heuristic_db()
+#heuristic(cube)
+cube.up()
+printCube(cube)
 
 
-'''for i in range(1,6):
+'''for i in range(1,2):
     cube = RubiksCube()
     cube.shuffle(i)
 
