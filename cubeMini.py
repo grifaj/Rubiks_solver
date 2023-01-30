@@ -49,31 +49,34 @@ class RubiksCube:
 
     # test if cube is solved, returns boolean
     def solved(self):
-        return np.array_equal(self.array, self.getArray())
+        # sides have no centre so can rotate whole cube with mo problems check each side has only one colour
+        for i in range(6):
+            side = np.array(self.array[i]).reshape(-1)
+            if len(set(side)) != 1:
+                return False
+        return True
     
-    #################################################
-    ###### stolen, need to implement by self ########
-
-    # TODO rotate faces properly
     # print out cube nicely
     def printCube(self):
         spacing = f'{" " * (len(str(self.array[0][0])) + 2)}'
-        l1 = '\n'.join(spacing + str(c) for c in self.array[1])
+        l1 = '\n'.join(spacing + str(c) for c in self.array[1][::-1])
         l2 = '\n'
         for j in range(len(self.array[0])):
-            l2 +=''.join(str(self.array[5][j]))+ '  '
+            l2 +=''.join(str(np.rot90(np.array(self.array[5]),-1)[j]))+ '  '
             l2 +=''.join(str(self.array[3][j]))+ '  '
-            l2 +=''.join(str(self.array[4][j]))+ '  '
-            l2 +=''.join(str(self.array[2][j]))+ '  '
+            l2 +=''.join(str(np.rot90(np.array(self.array[4]))[j]))+ '  '
+            l2 +=''.join(str(self.array[2][1-j]))+ '  '
             l2 +='\n'
         l3 = '\n'.join(spacing + str(c) for c in self.array[0])
         print(f'{l1}\n{l2}\n{l3}')
 
     def shuffle(self, numMoves):
 
+        moves =[]
         for _ in range(numMoves):
             f = choice(['u','l','r','f','d','b'])
             d = choice(['c', 'ac'])
+            moves.append((f,d))
 
             if f == 'u':
                 self.up() if d == 'c' else self.up_prime()
@@ -88,16 +91,17 @@ class RubiksCube:
             if f == 'b':
                 self.back() if d == 'c' else self.back_prime()
 
-    # need to be changed for 2x2 ###############
+        return moves
+
 
     def front(self):
         cube = np.array(self.array)
         # make temp of top edge
-        temp = np.copy(cube[3, 2, :])
+        temp = np.copy(cube[3, 1, :])
         #move left edge to top edge
-        cube[3, 2, :] = np.flip(cube[5, :, 2])
+        cube[3, 1, :] = np.flip(cube[5, :, 1])
         # move bottom edge to left edge
-        cube[5, :, 2] = cube[2, 0, :]
+        cube[5, :, 1] = cube[2, 0, :]
         # move right edge to bottom edge
         cube[2, 0, :] = np.flip(cube[4, :, 0])
         # move top edge to right
@@ -114,13 +118,13 @@ class RubiksCube:
     def right(self):
         cube = np.array(self.array)
         # make temp of top edge
-        temp = np.copy(cube[3, :, 2])
+        temp = np.copy(cube[3, :, 1])
         #move front edge to top edge
-        cube[3, :, 2] = cube[0, :, 2]
+        cube[3, :, 1] = cube[0, :, 1]
         # move bottom edge to front edge
-        cube[0, :, 2] = cube[2, :, 2]
+        cube[0, :, 1] = cube[2, :, 1]
         # move back edge to bottom edge
-        cube[2, :, 2] = np.flip(cube[1, :, 0])
+        cube[2, :, 1] = np.flip(cube[1, :, 0])
         # move top edge to back edge
         cube[1, :, 0] = np.flip(temp)
         # rotate right face
@@ -137,9 +141,9 @@ class RubiksCube:
         # make temp of top edge
         temp = np.copy(cube[3, :, 0])
         # move back edge to top edge
-        cube[3, :, 0] = np.flip(cube[1, :, 2])
+        cube[3, :, 0] = np.flip(cube[1, :, 1])
         # move bottom edge to back edge
-        cube[1, :, 2] = np.flip(cube[2, :, 0])
+        cube[1, :, 1] = np.flip(cube[2, :, 0])
         # move front edge to bottom edge
         cube[2, :, 0] = cube[0, :, 0]
         # move top edge to front edge
@@ -178,15 +182,15 @@ class RubiksCube:
     def down(self):
         cube = np.array(self.array)
         # make temp of front
-        temp = np.copy(cube[0, 2, :])
+        temp = np.copy(cube[0, 1, :])
         # move left to front
-        cube[0, 2, :] = cube[5, 2, :]
+        cube[0, 1, :] = cube[5, 1, :]
         # move back to left
-        cube[5, 2, :] = cube[1, 2, :]
+        cube[5, 1, :] = cube[1, 1, :]
         # move right to back
-        cube[1, 2, :] = cube[4, 2, :]
+        cube[1, 1, :] = cube[4, 1, :]
         # move front to right
-        cube[4, 2, :] = temp
+        cube[4, 1, :] = temp
         # rotate down face
         cube[2, :, :] = np.rot90(cube[2, :, :],-1)
         self.array = cube
@@ -202,11 +206,11 @@ class RubiksCube:
         # make temp of top
         temp = np.copy(cube[3, 0, :])
         # move right to top
-        cube[3, 0, :] = cube[4, :, 2]
+        cube[3, 0, :] = cube[4, :, 1]
         # move bottom to right
-        cube[4, :, 2] = np.flip(cube[2, 2, :])
+        cube[4, :, 1] = np.flip(cube[2, 1, :])
         # move left to bottom
-        cube[2, 2, :] = cube[5, :, 0]
+        cube[2, 1, :] = cube[5, :, 0]
         # move top to left
         cube[5, :, 0] = np.flip(temp)
         # rotate back face

@@ -1,38 +1,25 @@
 import numpy as np
 from cubeMini import RubiksCube
 import json
+from tqdm import tqdm 
 
-'''if h_db is None or NEW_HEURISTICS is True:
-    actions = [(r, n, d) for r in ['h', 'v', 's'] for d in [0, 1] for n in range(cube.n)]
-    h_db = build_heuristic_db(
-        cube.stringify(),
-        actions,
-        max_moves = MAX_MOVES,
-        heuristic = h_db
-    )
+def coulour_independant(state):
+    num = 0
+    for i in range(len(state)):
+        if not state[i].isnumeric():
+            state = state.replace(state[i],str(num))
+            num+=1
+    return state
 
-    with open(HEURISTIC_FILE, 'w', encoding='utf-8') as f:
-        json.dump(
-            h_db,
-            f,
-            ensure_ascii=False,
-            indent=4
-        )
-'''
+def build_heuristic_db():
 
-def build_heuristic_db(state, actions, max_moves = 20, heuristic = None):
-    """
-    Input: state - string representing the current state of the cube
-           actions -list containing tuples representing the possible actions that can be taken
-           max_moves - integer representing the max amount of moves alowed (default = 20) [OPTIONAL]
-           heuristic - dictionary containing current heuristic map (default = None) [OPTIONAL]
-    Description: create a heuristic map for determining the best path for solving a rubiks cube
-    Output: dictionary containing the heuristic map
-    """
-    if heuristic is None:
-        heuristic = {state: 0}
+    max_moves  = 10
+    cube = RubiksCube()
+    state = cube.stringify()
+
+    heuristic = {coulour_independant(state): 0}
     que = [(state, 0)]
-    node_count = sum([len(actions) ** (x + 1) for x in range(max_moves + 1)])
+    node_count = 3674160 # max at 14
     with tqdm(total=node_count, desc='Heuristic DB') as pbar:
         while True:
             if not que:
@@ -40,20 +27,20 @@ def build_heuristic_db(state, actions, max_moves = 20, heuristic = None):
             s, d = que.pop()
             if d > max_moves:
                 continue
-            for a in actions:
-                cube = RubiksCube(state=s)
-                if a[0] == 'h':
-                    cube.horizontal_twist(a[1], a[2])
-                elif a[0] == 'v':
-                    cube.vertical_twist(a[1], a[2])
-                elif a[0] == 's':
-                    cube.side_twist(a[1], a[2])
-                a_str = cube.stringify()
-                if a_str not in heuristic or heuristic[a_str] > d + 1:
-                    heuristic[a_str] = d + 1
-                que.append((a_str, d+1))
-                pbar.update(1)
-    return heuristic
+            for next_action in generate_next_states(s):
+                a_str = next_action[0]
+                # convert to colour independant representation
+                a_str_num = coulour_independant(a_str)
+                if a_str_num not in heuristic:
+                    heuristic[a_str_num] = d + 1
+                    que.append((a_str, d+1))
+                    pbar.update(1)
+                if heuristic[a_str_num] > d + 1:
+                    heuristic[a_str_num] = d + 1
+
+    # dump dicitonary to file
+    with open('heuristic.json', 'w', encoding='utf-8') as f:
+        json.dump(heuristic, f, ensure_ascii=False, indent=4)
 
 
 ## not in use yet ###
@@ -74,10 +61,12 @@ def getSolvedPosition(piece):
 
 
 def heuristic(cube):
-    cube_str = cube.stringify()
-    print(cube_str)
+    cube_str = coulour_independant(cube.stringify())
     if cube_str in heuristic_data:
         return heuristic_data[cube_str]
+
+    print('should not happen',cube_str)
+    return 14 ## should change
 
     '''# state not in database, calculate manhatton distance instead
     pieces = face2pieces(cube.array)
@@ -154,6 +143,7 @@ def ida_star(state, g, bound, path, max_depth):
 
 def solve_cube(cube):
     bound = heuristic(cube)
+    #print('bound',bound)
     path = [] 
     max_depth = None
     while True:
@@ -166,20 +156,28 @@ def solve_cube(cube):
 ######################## main ##################################
 
 
+#build_heuristic_db()
+
+
 # load heuristic data
 global heuristic_data
-#with open('heuristic.json') as f:
-#   heuristic_data = json.load(f)
-#print('data loaded')
+with open('heuristic.json') as f:
+    heuristic_data = json.load(f)
+print('data loaded')
 
-cube = RubiksCube()
-cube.printCube()
+#cube = RubiksCube()
+#print(coulour_independant(cube.stringify()))
 
-
-'''for i in range(1,6):
+for i in range(1,10):
     cube = RubiksCube()
-    cube.shuffle(i)
-
-    print(i,solve_cube(cube))'''
+    moves = cube.shuffle(i)
+    print(len(moves), moves)
+    soln =solve_cube(cube)
+    print(soln)
+    if len(moves) < soln[0] or soln[0] > 14:
+        print('sub-optimal')
+    if heuristic(cube) > i:
+        print('bad bound:', heuristic(cube))
+    print()
 
 
