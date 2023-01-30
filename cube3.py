@@ -51,9 +51,6 @@ class RubiksCube:
     def solved(self):
         return np.array_equal(self.array, self.getArray())
     
-    #################################################
-    ###### stolen, need to implement by self ########
-
     # print out cube nicely
     def printCube(self):
         order = [5,3,4,2]
@@ -210,3 +207,36 @@ class RubiksCube:
         # rotate clockwise three times
         for _ in range(3):
             self.back()
+
+
+    # TODO minor changes needed 
+    # convert cube to slices to calculate manhattan distance, (put in cube)?
+    def face2pieces(cube):
+        cube = np.array(cube)
+        slices = [[[[] for _ in range(3)] for _ in range(3)] for _ in range(3)]
+        for i in range(3):
+            slices[0][0][i] = [cube[3,2,i],(cube[5,0,2] if i == 0 else (cube[4,0,0] if i == 2 else None)),cube[0,0,i]] # top row first slice
+            slices[0][1][i] = [(cube[5,1,2] if i == 0 else (cube[4,1,0] if i == 2 else None)),cube[0,1,i]] # middle row first slice
+            slices[0][2][i] =  [cube[2,0,i], (cube[5,2,2] if i ==0 else (cube[4,2,0] if i == 2 else None)),cube[0,2,i]] # bottom row first slice
+
+            slices[1][0][i] = [cube[3,1,i],(cube[5,0,1] if i == 0 else (cube[4,0,1] if i == 2 else None))] # top row middle slice
+            slices[1][2][i] = [cube[2,1,i], (cube[5,2,1] if i == 0 else (cube[4,2,1] if i == 2 else None))] #bottom row middle slice
+
+            slices[2][0][i] = [cube[3,0,i], (cube[5,0,0] if i == 0 else (cube[4,0,2] if i == 2 else None)), cube[1,0,2-i]] # top row back slice
+            slices[2][1][i] = [(cube[5,1,0] if i == 0 else (cube[4,1,2] if i == 2 else None)), cube[1,1,2-i]] # middle row back slice
+            slices[2][2][i] = [cube[2,2,i], (cube[5,2,0] if i == 0 else (cube[4,2,2] if i == 2 else None)), cube[1,2,2-i]] # bottom row back slice
+        
+        slices[1][1] = [[cube[5,1,1]],[],[cube[4,1,1]]] # middle row middle slice
+
+        remove_None(slices)
+        return slices
+
+    # remove none placeholders from slices
+    def remove_None(cube):
+        for a in cube:
+            for b in a:
+                for c in b:
+                    try:
+                        c.remove(None)
+                    except ValueError:
+                        pass

@@ -1,38 +1,24 @@
 import numpy as np
-from cube import RubiksCube
+from cubeMini import RubiksCube
 import json
 
-# remove none placeholders from slices
-def remove_None(cube):
-    for a in cube:
-        for b in a:
-            for c in b:
-                try:
-                    c.remove(None)
-                except ValueError:
-                    pass
+'''if h_db is None or NEW_HEURISTICS is True:
+    actions = [(r, n, d) for r in ['h', 'v', 's'] for d in [0, 1] for n in range(cube.n)]
+    h_db = build_heuristic_db(
+        cube.stringify(),
+        actions,
+        max_moves = MAX_MOVES,
+        heuristic = h_db
+    )
 
-
-# convert cube to slices to calculate manhattan distance, (put in cube)?
-def face2pieces(cube):
-    cube = np.array(cube)
-    slices = [[[[] for _ in range(3)] for _ in range(3)] for _ in range(3)]
-    for i in range(3):
-        slices[0][0][i] = [cube[3,2,i],(cube[5,0,2] if i == 0 else (cube[4,0,0] if i == 2 else None)),cube[0,0,i]] # top row first slice
-        slices[0][1][i] = [(cube[5,1,2] if i == 0 else (cube[4,1,0] if i == 2 else None)),cube[0,1,i]] # middle row first slice
-        slices[0][2][i] =  [cube[2,0,i], (cube[5,2,2] if i ==0 else (cube[4,2,0] if i == 2 else None)),cube[0,2,i]] # bottom row first slice
-
-        slices[1][0][i] = [cube[3,1,i],(cube[5,0,1] if i == 0 else (cube[4,0,1] if i == 2 else None))] # top row middle slice
-        slices[1][2][i] = [cube[2,1,i], (cube[5,2,1] if i == 0 else (cube[4,2,1] if i == 2 else None))] #bottom row middle slice
-
-        slices[2][0][i] = [cube[3,0,i], (cube[5,0,0] if i == 0 else (cube[4,0,2] if i == 2 else None)), cube[1,0,2-i]] # top row back slice
-        slices[2][1][i] = [(cube[5,1,0] if i == 0 else (cube[4,1,2] if i == 2 else None)), cube[1,1,2-i]] # middle row back slice
-        slices[2][2][i] = [cube[2,2,i], (cube[5,2,0] if i == 0 else (cube[4,2,2] if i == 2 else None)), cube[1,2,2-i]] # bottom row back slice
-     
-    slices[1][1] = [[cube[5,1,1]],[],[cube[4,1,1]]] # middle row middle slice
-
-    remove_None(slices)
-    return slices
+    with open(HEURISTIC_FILE, 'w', encoding='utf-8') as f:
+        json.dump(
+            h_db,
+            f,
+            ensure_ascii=False,
+            indent=4
+        )
+'''
 
 def build_heuristic_db(state, actions, max_moves = 20, heuristic = None):
     """
@@ -70,6 +56,7 @@ def build_heuristic_db(state, actions, max_moves = 20, heuristic = None):
     return heuristic
 
 
+## not in use yet ###
 # funtion to get x,y,z differece for each piece
 def getSolvedPosition(piece):
     # goal state 
@@ -78,7 +65,7 @@ def getSolvedPosition(piece):
     for x in range(3):
         for y in range(3):
             for z in range(3):
-                if set(solved[x][y][z]) == set(piece): # check for rotation?
+                if set(solved[x][y][z]) == set(piece):
                     return x, y, z
     print('ruh row')
     print(piece)
@@ -92,8 +79,7 @@ def heuristic(cube):
     if cube_str in heuristic_data:
         return heuristic_data[cube_str]
 
-    print('past 6?')
-    # state not in database, calculate manhatton distance instead
+    '''# state not in database, calculate manhatton distance instead
     pieces = face2pieces(cube.array)
     cornerDistance = 0
     edgeDistance = 0
@@ -103,10 +89,6 @@ def heuristic(cube):
             for k in range(3):
                 # Get the current cubelet and its goal position
                 current_cubelet = pieces[i][j][k]
-                #############
-                if getSolvedPosition(current_cubelet) is None:
-                    cube.printCube()
-                #############
                 goal_x, goal_y, goal_z = getSolvedPosition(current_cubelet)
                 # Calculate the manhattan distance
                 manDistance = abs(i - goal_x) + abs(j - goal_y) + abs(k - goal_z)
@@ -117,7 +99,7 @@ def heuristic(cube):
                     edgeDistance +=manDistance
                 
     # Korf 1997 max of sum of corner distances and edge distances, divided by 4
-    return max(cornerDistance,edgeDistance)/4
+    return max(cornerDistance,edgeDistance)/4'''
     
 
 def generate_next_states(state):
@@ -186,12 +168,12 @@ def solve_cube(cube):
 
 # load heuristic data
 global heuristic_data
-with open('heuristic.json') as f:
-    heuristic_data = json.load(f)
-print('data loaded')
+#with open('heuristic.json') as f:
+#   heuristic_data = json.load(f)
+#print('data loaded')
 
 cube = RubiksCube()
-heuristic(cube)
+cube.printCube()
 
 
 '''for i in range(1,6):
