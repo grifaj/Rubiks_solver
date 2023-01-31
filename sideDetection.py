@@ -92,7 +92,7 @@ def getColours(cube):
     # set greyscale, blur and find edges
     grey = cv.cvtColor(cube, cv.COLOR_BGR2GRAY)
     canny = cv.Canny(grey, 80, 120)
-    kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE,(21,21))
+    kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE,(1,1))
     dilated = cv.dilate(canny, kernel)
 
     #showImg('edges',dilated)
@@ -100,6 +100,7 @@ def getColours(cube):
     # get contours
     contours, hierarchies = cv.findContours(dilated, cv.RETR_TREE, cv.CHAIN_APPROX_NONE)
 
+    # display contours
     blank = np.zeros(cube.shape, dtype='uint8')
     cv.drawContours(blank, contours, -1, (0,255,0), 1)
     #showImg('contours',blank)
@@ -109,7 +110,8 @@ def getColours(cube):
     else:
         hierarchies = hierarchies[0]
 
-    cubies = []
+    colours = []
+    # for each contour check if it is a square
     for i in range(len(contours)):
         contour = contours[i]
         hierarchy = hierarchies[i]
@@ -118,93 +120,29 @@ def getColours(cube):
         area = cv.contourArea(contour)
         perimeter = cv.arcLength(contour, True)
         epsilon = 0.01 * perimeter
-        approx = cv.approxPolyDP(contour, epsilon, True)
-        squareness = cv.norm((perimeter/4)**2 / area)
+        #approx = cv.approxPolyDP(contour, epsilon, True)
+        squareness = cv.norm(((perimeter / 4) * (perimeter / 4)) - area)
 
-        #find the main face
-        if parent == -1 and area > 100000 and squareness < 10:
+        # likely candidate for piece
+        if parent == -1 and area > 10 and squareness < 150:
+            
+            # add contour to image
+            cv.drawContours(cube, contours, i, (0,255,0), 1)
 
-            #blank = np.zeros(cube.shape, dtype='uint8')
-            #cv.drawContours(blank, contours, i, (0,255,0), 2)
-            #showImg(str(i),blank)
-
-            # draw approx shape
-            cv.drawContours(cube, [approx], -1, (0,0,255), 3)
-
-
-            #split into 9 squares
-            square = cv.minAreaRect(approx)
-            box = cv.boxPoints(square)
-            box = np.int0(box)
-            #cv.drawContours(cube,[box],0,(0,255,255),2)
-
-            #find closest hull point to box 
-            hull = cv.convexHull(contour)
-            for pt in hull:
-                cv.circle(cube, pt[0], 2, (255, 0, 0), 2)
-
-            skew_box  = box.copy()
-            count = 0
-            for vert in box:
-                best_dist = -1
-                for point in hull:
-                    pt = point[0]
-                    dist = np.sqrt((pt[0] - vert[0])**2 + (pt[1] - vert[1])**2)
-                    if dist < best_dist or best_dist == -1:
-                        best_dist = dist
-                        best_pt = pt
-                skew_box[count] = best_pt
-                count +=1
-                
-            cv.drawContours(cube,[skew_box],0,(0,255,255),2)
-
-            corners = []
-            for i in range(4):
-                cv.circle(cube, skew_box[i], 10, (255,0,255), 3) # add corners
-                (a,b) = fractionPoint(skew_box[i],skew_box[(i+1)%4],2)
-                cv.circle(cube, (a,b), 10, (255,0,255), 3) 
-                corners.append((a,b))
-                cv.putText(cube, str(len(corners)-1), (a,b), cv.FONT_HERSHEY_TRIPLEX, 1, (0,0,0), 2)
-
-            # sixths
-            for i in range(4):
-                # one side
-                (a,b) = fractionPoint(skew_box[i],skew_box[(i+1)%4],6)
-                cv.circle(cube, (a,b), 10, (255,0,255), 3) 
-                corners.append((a,b))
-                cv.putText(cube, str(len(corners)-1), (a,b), cv.FONT_HERSHEY_TRIPLEX, 1, (0,0,0), 2)
-                #other side
-                (a,b) = fractionPoint(skew_box[(i+1)%4],skew_box[i],6)
-                cv.circle(cube, (a,b), 10, (255,0,255), 3) 
-                corners.append((a,b))
-                cv.putText(cube, str(len(corners)-1), (a,b), cv.FONT_HERSHEY_TRIPLEX, 1, (0,0,0), 2)
+            #get average colour
+            mask = np.zeros(grey.shape, np.uint8)
+            cv.drawContours(mask, [contour], 0, 255, -1)
+            mean = cv.mean(cube, mask=mask) # might not make sense, try HSV
+            colours.append(getColour(mean))
 
 
-            #draw lines between corners
-            cv.line(cube,corners[5],corners[8],(255,0,255),3)
-            cv.line(cube,corners[0],corners[2],(255,0,255),3)
-            cv.line(cube,corners[4],corners[9],(255,0,255),3)
-            cv.line(cube,corners[10],corners[7],(255,0,255),3)
-            cv.line(cube,corners[3],corners[1],(255,0,255),3)
-            cv.line(cube,corners[11],corners[6],(255,0,255),3)
 
-            intersections = [[5,8,10,7],[0,2,10,7],[4,9,10,7],[3,1,5,8],[3,1,0,2],[3,1,4,9],[5,8,11,6],[0,2,11,6],[11,6,4,9]]
-            colours = []
-            for i in range(9): #for each cubie
-                inter = intersection((corners[intersections[i][0]],corners[intersections[i][1]]),(corners[intersections[i][2]],corners[intersections[i][3]]))
-                cv.circle(cube, inter, 10, (255,0,255), 3)
-                r = 20 #radius
-                cv.rectangle(cube, (inter[0]-r,inter[1]-r), (inter[0]+r, inter[1]+r), (0, 255, 255), 2)
-                cubie_colour = getColour(np.array(cv.mean(cube[inter[1]-r:inter[1]+r,inter[0]-r:inter[0]+r])).astype(int))
-                #cv.putText(cube, cubie_colour, (inter[0]-r,inter[1]-r), cv.FONT_HERSHEY_TRIPLEX,  1, (0,0,0), 2)
-                colours.append(cubie_colour)
-
-            #create box in corner for colours
-            side_len = 50
-            pos = [[0,1,2],[3,4,5],[6,7,8]]
-            for i in range(len(pos)):
-                for j in range(len(pos[i])):
-                    cv.rectangle(cube, (i*side_len,j*side_len),((i+1)*side_len,(j+1)*side_len), colours[pos[i][j]],-1)
+    #create box in corner for colours
+    side_len = 30
+    pos = [[0,1],[2,3]]
+    for i in range(len(pos)):
+        for j in range(len(pos[i])):
+            cv.rectangle(cube, (i*side_len,j*side_len),((i+1)*side_len,(j+1)*side_len), colours[pos[i][j]],-1)
 
 
     
@@ -237,7 +175,7 @@ if video:
     cv.waitKey(0)
 
 else: #photo only
-    cube = cv.imread('C:\\Users\\Alfie\\Documents\\uni_work\\year3\\cs310\\github\Rubiks_solver\\cube3.JPG')
+    cube = cv.imread('C:\\Users\\Alfie\\Documents\\uni_work\\year3\\cs310\\github\Rubiks_solver\\good521.JPG')
     #cube = cv.imread('/home/grifaj/Documents/y3project/Rubiks_solver/cube3.jpg')
 
     output = getColours(cube)
