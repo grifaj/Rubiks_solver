@@ -25,12 +25,12 @@ def getColour(cubie_value):
 # compare colours in lab colour space using CIE76/CIE94
 def getColour_lab(cubie_value):
     names = ['white', 'red', 'blue', 'orange', 'green', 'yellow']
-    colours = [[255,255,255],[20,18,137],[172,72,13],[37,85,255],[76,155,25],[47,213,254]]
+    colours = [(255,255,255),(20,18,137),(172,72,13),(37,85,255),(76,155,25),(47,213,254)]
 
     #convert colours to lab
     for a in range(len(colours)):
-        colours[a] = cv.cvtColor(colours[a], cv.COLOR_BGR2LAB)
-    cubie_value = cv.cvtColor(cubie_value, cv.COLOR_BGR2LAB)
+        colours[a] = cv.cvtColor(np.uint8([[colours[a]]]), cv.COLOR_BGR2LAB)[0][0]
+    cubie_value = cv.cvtColor(np.uint8([[cubie_value]]), cv.COLOR_BGR2LAB)[0][0]
 
     best_dist = -1
     best_colour = ''
@@ -40,7 +40,7 @@ def getColour_lab(cubie_value):
             best_dist = diff
             best_colour = names[a]
 
-    return colours[names.index(best_colour)]
+    return list(cv.cvtColor(np.uint8([[colours[names.index(best_colour)]]]), cv.COLOR_LAB2BGR)[0][0])
 
 '''   elif method=='CIE94':
         L1, a1, b1 = color1
@@ -81,7 +81,7 @@ def intersection(line1, line2):
 # scale and show image for printing
 def showImg(label, img):
     #scale image
-    scale = 1.2
+    scale = 1
     width = int(img.shape[1] *scale)
     height = int(img.shape[0] *scale)
     dimensions = (width, height)
@@ -89,13 +89,23 @@ def showImg(label, img):
     cv.imshow(label,img)
 
 def getColours(cube):
+    
+    #scale image
+    scale = 0.5
+    width = int(cube.shape[1] *scale)
+    height = int(cube.shape[0] *scale)
+    dimensions = (width, height)
+    cube = cv.resize(cube, dimensions, interpolation=cv.INTER_AREA)
+
+
     # set greyscale, blur and find edges
     grey = cv.cvtColor(cube, cv.COLOR_BGR2GRAY)
-    canny = cv.Canny(grey, 80, 120)
-    kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE,(1,1))
+    blur = cv.blur(cube,(5,5))
+    canny = cv.Canny(blur, 80, 120)
+    kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE,(3,3))
     dilated = cv.dilate(canny, kernel)
 
-    #showImg('edges',dilated)
+    showImg('edges',dilated)
 
     # get contours
     contours, hierarchies = cv.findContours(dilated, cv.RETR_TREE, cv.CHAIN_APPROX_NONE)
@@ -103,14 +113,16 @@ def getColours(cube):
     # display contours
     blank = np.zeros(cube.shape, dtype='uint8')
     cv.drawContours(blank, contours, -1, (0,255,0), 1)
-    #showImg('contours',blank)
+    showImg('contours',blank)
 
     if hierarchies is None:
         return cube
     else:
         hierarchies = hierarchies[0]
 
+    output = cube
     colours = []
+    colours_lab =[]
     # for each contour check if it is a square
     for i in range(len(contours)):
         contour = contours[i]
@@ -119,39 +131,47 @@ def getColours(cube):
 
         area = cv.contourArea(contour)
         perimeter = cv.arcLength(contour, True)
-        epsilon = 0.01 * perimeter
+        #epsilon = 0.01 * perimeter
         #approx = cv.approxPolyDP(contour, epsilon, True)
         squareness = cv.norm(((perimeter / 4) * (perimeter / 4)) - area)
 
         # likely candidate for piece
-        if parent == -1 and area > 10 and squareness < 150:
+        if parent == -1 and area > 1000 and squareness < 150:
             
+            #print(i,area, squareness, parent)
+
             # add contour to image
-            cv.drawContours(cube, contours, i, (0,255,0), 1)
+            cv.drawContours(output, contours, i, (0,255,0), 1)
 
             #get average colour
             mask = np.zeros(grey.shape, np.uint8)
             cv.drawContours(mask, [contour], 0, 255, -1)
             mean = cv.mean(cube, mask=mask) # might not make sense, try HSV
+
+            print(getColour(mean))
+            print(getColour_lab(mean))
             colours.append(getColour(mean))
+            colours_lab.append(getColour_lab(mean))
 
 
-
-    #create box in corner for colours
-    side_len = 30
-    pos = [[0,1],[2,3]]
-    for i in range(len(pos)):
-        for j in range(len(pos[i])):
-            cv.rectangle(cube, (i*side_len,j*side_len),((i+1)*side_len,(j+1)*side_len), colours[pos[i][j]],-1)
+    print(colours)
+    print(colours_lab)
+    if len(colours) == 4:
+        #create box in corner for colours
+        side_len = 50
+        pos = [[0,1],[2,3]]
+        for i in range(len(pos)):
+            for j in range(len(pos[i])):
+                cv.rectangle(output, (i*side_len,j*side_len),((i+1)*side_len,(j+1)*side_len), colours_lab[pos[i][j]],-1)
 
 
     
-    return cube
+    return output
 
 video = False
 
 if video:
-    cap = cv.VideoCapture(4)
+    cap = cv.VideoCapture(2)
     if not cap.isOpened():
         print("Cannot open camera")
         exit()
@@ -175,8 +195,8 @@ if video:
     cv.waitKey(0)
 
 else: #photo only
-    cube = cv.imread('C:\\Users\\Alfie\\Documents\\uni_work\\year3\\cs310\\github\Rubiks_solver\\good521.JPG')
-    #cube = cv.imread('/home/grifaj/Documents/y3project/Rubiks_solver/cube3.jpg')
+    #cube = cv.imread('C:\\Users\\Alfie\\Documents\\uni_work\\year3\\cs310\\github\Rubiks_solver\\good521.JPG')
+    cube = cv.imread('/home/grifaj/Documents/y3project/Rubiks_solver/test1.jpg')
 
     output = getColours(cube)
     showImg('output', output)
