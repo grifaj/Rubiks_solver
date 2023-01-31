@@ -59,13 +59,13 @@ class RubiksCube:
     # print out cube nicely
     def printCube(self):
         spacing = f'{" " * (len(str(self.array[0][0])) + 2)}'
-        l1 = '\n'.join(spacing + str(c) for c in self.array[1][::-1])
+        l1 = '\n'.join(spacing + str(c) for c in np.rot90(np.array(self.array[1]),-2))
         l2 = '\n'
         for j in range(len(self.array[0])):
             l2 +=''.join(str(np.rot90(np.array(self.array[5]),-1)[j]))+ '  '
             l2 +=''.join(str(self.array[3][j]))+ '  '
             l2 +=''.join(str(np.rot90(np.array(self.array[4]))[j]))+ '  '
-            l2 +=''.join(str(self.array[2][1-j]))+ '  '
+            l2 +=''.join(str(self.array[2][1-j][::-1]))+ '  '
             l2 +='\n'
         l3 = '\n'.join(spacing + str(c) for c in self.array[0])
         print(f'{l1}\n{l2}\n{l3}')
