@@ -1,7 +1,7 @@
 import cv2 as cv
 import numpy as np
 
-def find_closest_color(input_color):
+'''def find_closest_color(input_color):
     color_list = [(255,255,255),(20,18,137),(172,72,13),(37,85,255),(76,155,25),(47,213,254)]
     input_color = np.uint8([[input_color]])
     input_hsv = cv.cvtColor(input_color, cv.COLOR_BGR2HSV)
@@ -14,33 +14,39 @@ def find_closest_color(input_color):
         if dist < min_dist:
             closest_color = color
             min_dist = dist
-    return closest_color[0][0].tolist()
-
-
-# takes too long
-def avg_pixel(roi):
-    color_list = [[255,255,255],[20,18,137],[172,72,13],[37,85,255],[76,155,25],[47,213,254]]
-    hsv_roi = cv.cvtColor(roi, cv.COLOR_BGR2HSV)
-    hsv_roi = np.float32(hsv_roi)
-
-    # convert to hsv space
-    hsv_colors = [np.uint8([[color]]) for color in color_list]
-    hsv_colors = [cv.cvtColor(color, cv.COLOR_BGR2HSV) for color in hsv_colors]
-    
-    # Calculate the color distances between each pixel in the ROI and each known color
-    color_dists = []
-    for hsv_color in hsv_colors:
-        color_hsv = hsv_color[0][0]
-        color_dist = np.sum((hsv_roi - color_hsv) ** 2)
-        color_dists.append(color_dist)
-
-    # Find the index of the known color with the smallest color distance
-    closest_color_idx = np.argmin(color_dists)
-
-    # Return the closest color
-    closest_color = color_list[closest_color_idx]
-    return closest_color
+    return closest_color[0][0].tolist()'''
         
+def find_closest_color(input_colour):
+    colour_names =  ['white', 'red', 'blue', 'orange', 'green', 'yellow']
+    colour_list = [(255,255,255),(20,18,137),(172,72,13),(37,85,255),(76,155,25),(47,213,254)]
+    print(input_colour)
+    h, s, v = cv.split(input_colour)
+    #white, ignore hue ideal (0,0,255)
+    if s < 10 and v > 100:
+        print(colour_names[0])
+        return colour_list[0]
+    # red
+    if 0 < h and h < 60:
+        print(colour_names[1])
+        return colour_list[1]
+    # blue
+    if 240 < h and h < 300:
+        print(colour_names[2])
+        return colour_list[2]
+    #orange
+    if 0 < h and h < 120:
+        print(colour_names[3])
+        return colour_list[3]
+    # green
+    if 120 < h and h < 180:
+        print(colour_names[4])
+        return colour_list[4]
+    # yellow
+    if 60 < h and h < 120:
+        print(colour_names[5])
+        return colour_list[5]
+    print('not known')
+
 # scale and show image for printing
 def showImg(label, img):
     #scale image
@@ -108,9 +114,10 @@ def getColours(cube):
             #get average colour
             mask = np.zeros(grey.shape, np.uint8) 
             cv.drawContours(mask, [contour], 0, 255, -1)
-            hsv_img = cv.cvtColor(cube, cv.COLOR_BGR2HSV)
-            h, s, v = cv.split(hsv_img)
-            mean = cv.mean(h, mask=mask)
+            hsv_img = cv.cvtColor(np.uint8([[[255,255,255 ]]]), cv.COLOR_BGR2HSV)
+            #hsv_img = cv.cvtColor(cube, cv.COLOR_BGR2HSV)
+            #mean = cv.mean(hsv_img, mask=mask)
+            mean = np.uint8([[cv.mean(hsv_img)[:-1]]])
             colours.append(find_closest_color(mean))
 
             '''  mask = np.zeros(grey.shape, np.uint8) 
@@ -127,7 +134,7 @@ def getColours(cube):
             pixels = np.uint8([pixels])
             colours.append(avg_pixel(pixels))'''
 
-    #print(colours)
+    print(colours)
     if len(colours) == 4:
         #create box in corner for colours
         side_len = 50
@@ -167,7 +174,7 @@ if video:
     cv.waitKey(0)
 
 else: #photo only
-    cube = cv.imread('C:\\Users\\Alfie\\Documents\\uni_work\\year3\\cs310\\github\Rubiks_solver\\test1.JPG')
+    cube = cv.imread('C:\\Users\\Alfie\\Documents\\uni_work\\year3\\cs310\\github\Rubiks_solver\\good521.JPG')
     #cube = cv.imread('/home/grifaj/Documents/y3project/Rubiks_solver/test1.jpg')
 
     output = getColours(cube)
