@@ -1,83 +1,46 @@
 import cv2 as cv
 import numpy as np
 
-# assign colour to pixel value of each cubie using closest colour
-def getColour(cubie_value):
-    names = ['white', 'red', 'blue', 'orange', 'green', 'yellow']
-    colours = [[255,255,255],[20,18,137],[172,72,13],[37,85,255],[76,155,25],[47,213,254]]
-
-    best_dist = -1
-    best_colour = ''
-    for a in range(len(colours)):
-        # compute eclidian distance
-        sum = 0
-        for b in range(len(colours[a])):
-            sum += (cubie_value[b] - colours[a][b])**2
-        diff = np.sqrt(sum)
-
-        if best_dist == -1 or best_dist > diff:
-            best_dist = diff
-            best_colour = names[a]
-
-    return colours[names.index(best_colour)]
-    #return best_colour
-
-# compare colours in lab colour space using CIE76/CIE94
-def getColour_lab(cubie_value):
-    names = ['white', 'red', 'blue', 'orange', 'green', 'yellow']
-    colours = [(255,255,255),(20,18,137),(172,72,13),(37,85,255),(76,155,25),(47,213,254)]
-
-    #convert colours to lab
-    for a in range(len(colours)):
-        colours[a] = cv.cvtColor(np.uint8([[colours[a]]]), cv.COLOR_BGR2LAB)[0][0]
-    cubie_value = cv.cvtColor(np.uint8([[cubie_value]]), cv.COLOR_BGR2LAB)[0][0]
-
-    best_dist = -1
-    best_colour = ''
-    for a in range(len(colours)):
-        diff =((cubie_value[0] - colours[a][0])**2 + (cubie_value[1] - colours[a][1])**2 + (cubie_value[2] - colours[a][2])**2)**(1/2)
-        if best_dist == -1 or best_dist > diff:
-            best_dist = diff
-            best_colour = names[a]
-
-    return list(cv.cvtColor(np.uint8([[colours[names.index(best_colour)]]]), cv.COLOR_LAB2BGR)[0][0])
-
-'''   elif method=='CIE94':
-        L1, a1, b1 = color1
-        L2, a2, b2 = color2
-        kl = 1
-        kc = 1
-        kh = 1
-        c1 = (a1**2 + b1**2)**(1/2)
-        c2 = (a2**2 + b2**2)**(1/2)
-        delta_c = c1 - c2
-        delta_a = a1 - a2
-        delta_b = b1 - b2
-        delta_h = (delta_a**2 + delta_b**2 - delta_c**2)**(1/2)
-        delta_l = L1 - L2
-        delta_e = ((delta_l/(kl*kl))**2 + (delta_c/(kc*kc))**2 + (delta_h/(kh*kh))**2)**(1/2)
-    return delta_e'''
+def find_closest_color(input_color):
+    color_list = [(255,255,255),(20,18,137),(172,72,13),(37,85,255),(76,155,25),(47,213,254)]
+    input_color = np.uint8([[input_color]])
+    input_hsv = cv.cvtColor(input_color, cv.COLOR_BGR2HSV)
+    closest_color = None
+    min_dist = float('inf')
+    for color in color_list:
+        color = np.uint8([[color]])
+        color_hsv = cv.cvtColor(color, cv.COLOR_BGR2HSV)
+        dist = np.sum((input_hsv - color_hsv) ** 2)
+        if dist < min_dist:
+            closest_color = color
+            min_dist = dist
+    return closest_color[0][0].tolist()
 
 
-def fractionPoint(ptA, ptB, div):
-    return (int(ptA[0]*(1/div) +ptB[0]*(1-(1/div))),int(ptA[1]*(1/div) +ptB[1]*(1-(1/div))))    
+# takes too long
+def avg_pixel(roi):
+    color_list = [[255,255,255],[20,18,137],[172,72,13],[37,85,255],[76,155,25],[47,213,254]]
+    hsv_roi = cv.cvtColor(roi, cv.COLOR_BGR2HSV)
+    hsv_roi = np.float32(hsv_roi)
 
-def intersection(line1, line2):
-    xdiff = (line1[0][0] - line1[1][0], line2[0][0] - line2[1][0])
-    ydiff = (line1[0][1] - line1[1][1], line2[0][1] - line2[1][1])
-
-    def det(a, b):
-        return a[0] * b[1] - a[1] * b[0]
-
-    div = det(xdiff, ydiff)
-    if div == 0:
-       raise Exception('lines do not intersect')
-
-    d = (det(*line1), det(*line2))
-    x = int(det(d, xdiff) / div)
-    y = int(det(d, ydiff) / div)
-    return x, y
+    # convert to hsv space
+    hsv_colors = [np.uint8([[color]]) for color in color_list]
+    hsv_colors = [cv.cvtColor(color, cv.COLOR_BGR2HSV) for color in hsv_colors]
     
+    # Calculate the color distances between each pixel in the ROI and each known color
+    color_dists = []
+    for hsv_color in hsv_colors:
+        color_hsv = hsv_color[0][0]
+        color_dist = np.sum((hsv_roi - color_hsv) ** 2)
+        color_dists.append(color_dist)
+
+    # Find the index of the known color with the smallest color distance
+    closest_color_idx = np.argmin(color_dists)
+
+    # Return the closest color
+    closest_color = color_list[closest_color_idx]
+    return closest_color
+        
 # scale and show image for printing
 def showImg(label, img):
     #scale image
@@ -105,7 +68,7 @@ def getColours(cube):
     kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE,(3,3))
     dilated = cv.dilate(canny, kernel)
 
-    showImg('edges',dilated)
+    #showImg('edges',dilated)
 
     # get contours
     contours, hierarchies = cv.findContours(dilated, cv.RETR_TREE, cv.CHAIN_APPROX_NONE)
@@ -113,7 +76,7 @@ def getColours(cube):
     # display contours
     blank = np.zeros(cube.shape, dtype='uint8')
     cv.drawContours(blank, contours, -1, (0,255,0), 1)
-    showImg('contours',blank)
+    #showImg('contours',blank)
 
     if hierarchies is None:
         return cube
@@ -122,7 +85,6 @@ def getColours(cube):
 
     output = cube
     colours = []
-    colours_lab =[]
     # for each contour check if it is a square
     for i in range(len(contours)):
         contour = contours[i]
@@ -144,25 +106,35 @@ def getColours(cube):
             cv.drawContours(output, contours, i, (0,255,0), 1)
 
             #get average colour
-            mask = np.zeros(grey.shape, np.uint8)
+            mask = np.zeros(grey.shape, np.uint8) 
             cv.drawContours(mask, [contour], 0, 255, -1)
-            mean = cv.mean(cube, mask=mask) # might not make sense, try HSV
+            hsv_img = cv.cvtColor(cube, cv.COLOR_BGR2HSV)
+            h, s, v = cv.split(hsv_img)
+            mean = cv.mean(h, mask=mask)
+            colours.append(find_closest_color(mean))
 
-            print(getColour(mean))
-            print(getColour_lab(mean))
-            colours.append(getColour(mean))
-            colours_lab.append(getColour_lab(mean))
+            '''  mask = np.zeros(grey.shape, np.uint8) 
+            cv.drawContours(mask, [contour], 0, 255, -1)
 
+            # get pixels inside contour
+            pixels = []
+            N = 0
+            for i in range(cube.shape[0]):
+                for j in range(cube.shape[1]):
+                    if mask[i][j] > 0 and (N % 5) == 0:
+                        pixels.append(cube[i][j])
+                        N+=1
+            pixels = np.uint8([pixels])
+            colours.append(avg_pixel(pixels))'''
 
-    print(colours)
-    print(colours_lab)
+    #print(colours)
     if len(colours) == 4:
         #create box in corner for colours
         side_len = 50
         pos = [[0,1],[2,3]]
         for i in range(len(pos)):
             for j in range(len(pos[i])):
-                cv.rectangle(output, (i*side_len,j*side_len),((i+1)*side_len,(j+1)*side_len), colours_lab[pos[i][j]],-1)
+                cv.rectangle(output, (i*side_len,j*side_len),((i+1)*side_len,(j+1)*side_len), colours[pos[i][j]],-1)
 
 
     
@@ -195,8 +167,8 @@ if video:
     cv.waitKey(0)
 
 else: #photo only
-    #cube = cv.imread('C:\\Users\\Alfie\\Documents\\uni_work\\year3\\cs310\\github\Rubiks_solver\\good521.JPG')
-    cube = cv.imread('/home/grifaj/Documents/y3project/Rubiks_solver/test1.jpg')
+    cube = cv.imread('C:\\Users\\Alfie\\Documents\\uni_work\\year3\\cs310\\github\Rubiks_solver\\test1.JPG')
+    #cube = cv.imread('/home/grifaj/Documents/y3project/Rubiks_solver/test1.jpg')
 
     output = getColours(cube)
     showImg('output', output)
