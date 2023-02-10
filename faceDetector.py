@@ -4,69 +4,146 @@ import time
 import random
 from centroidtracker import CentroidTracker
 import joblib
+import math as maths
 
-global max_val
-global min_val
-
-# finds the most sutible colour based on average pixel value
-def find_closest_color(input_colour):
-    colour_names =  ['white', 'red', 'blue', 'orange', 'green', 'yellow']
-    colour_list = [(255,255,255),(20,18,137),(172,72,13),(37,85,255),(76,155,25),(47,213,254)]
-    #print(input_colour)
-    l, a, b = cv.split(input_colour)
-    l = l[0][0]
-    a = a[0][0]
-    b = b[0][0]
-
-    for i in range(3):
-        c = input_colour[0][0][i]
-        if c > max_val[i]: 
-            max_val[i] = c
-        if c < min_val[i]: 
-            min_val[i] = c
-    # perhaps get avergae luminiace and calculate based on relative l for total
-
-     # white
-    if l in range(84,250) and a in range(105,133) and b in range(125,165):
-        return colour_list[0]
-    # orange
-    if l in range(76,200) and a in range(129,160) and b in range(163,205):
-        return colour_list[3]
-    # yellow
-    if l in range(101,235) and a in range(95,124) and b in range(170,204):
-        return colour_list[5]
-    # green
-    if l in range(79,200) and a in range(66,108) and b in range(145,170):
-        return colour_list[4]    
-    # blue
-    if l in range(54,165) and a in range(112,135) and b in range(89,130):
-        return colour_list[2]
-    # red
-    if l in range(70,180) and a in range(132,180) and b in range(147,185):
-        return colour_list[1]
-    #print('not known',input_colour)
+# groups faces based on closness of anlges to each other
+def group_cubes(contours, threshold):
+    groups = []
+    areas = [cv.contourArea(c) for c in contours]
+    combined = list(zip(contours, areas))
+    combined = sorted(combined, key=lambda x: x[1])
+    current_group = [combined[0][1]]
+    for i in range(1, len(combined)):
+        if abs(combined[i][1] - current_group[-1][1]) <= threshold:
+            current_group.append(combined[i])
+        else:
+            groups.append(current_group)
+            current_group = [combined[i]]
+    groups.append(current_group)
+    return groups
 
 # gets the 4 colours detected on the face and orders them to add to the state
-def order_faces(face_pos, colours):
-    combined = zip(face_pos, colours)
-    combined = list(combined)
+# TODO will need to amend this to partion contours into faces 
+def order_faces(contours, colours):
 
-    #order by y, gives top and bottom row
-    combined = sorted(combined, key=lambda x: x[0][1])
-    top = combined[:2]
-    bottom = combined[2:]
+    # split cubes into faces
+    groups = group_cubes(contours,150)
 
-    #order top and bottom by x value to give left and right
-    top = sorted(top, key=lambda x: x[0][0])
-    bottom = sorted(bottom, key=lambda x: x[0][0])
+    print(len(groups), groups)
 
-    #combine to give full sorted list
-    new_order = top + bottom
+    # order faces in each group if it has all 4 faces
+    for group in groups:
+        if len(group) == 4:
 
-    # seperate colours out in new order
-    colours = [y for x,y in new_order]
+            #get postions of faces
+            face_pos = [get_centre(c) for c in contours]
+
+            combined = zip(face_pos, colours)
+            combined = list(combined)
+
+            #order by y, gives top and bottom row
+            combined = sorted(combined, key=lambda x: x[0][1])
+            top = combined[:2]
+            bottom = combined[2:]
+
+            #order top and bottom by x value to give left and right
+            top = sorted(top, key=lambda x: x[0][0])
+            bottom = sorted(bottom, key=lambda x: x[0][0])
+
+            #combine to give full sorted list
+            new_order = top + bottom
+
+            # seperate colours out in new order
+            colours = [y for x,y in new_order]
 
     return colours
+
+# returns centre of the contour
+def get_centre(contour):
+    M = cv.moments(contour)
+    cX = int(M["m10"] / M["m00"])
+    cY = int(M["m01"] / M["m00"])
+
+    return (cX, cY)
+
+'''def drawAxis(img, p_, q_, color, scale):
+  p = list(p_)
+  q = list(q_)
+  pi = maths.pi
+ 
+  ## [visualization1]
+  angle = maths.atan2(p[1] - q[1], p[0] - q[0]) # angle in radians
+  hypotenuse = maths.sqrt((p[1] - q[1]) * (p[1] - q[1]) + (p[0] - q[0]) * (p[0] - q[0]))
+ 
+  # Here we lengthen the arrow by a factor of scale
+  q[0] = p[0] - scale * hypotenuse * maths.cos(angle)
+  q[1] = p[1] - scale * hypotenuse * maths.sin(angle)
+  cv.line(img, (int(p[0]), int(p[1])), (int(q[0]), int(q[1])), color, 3, cv.LINE_AA)
+ 
+  # create the arrow hooks
+  p[0] = q[0] + 9 * maths.cos(angle + pi / 4)
+  p[1] = q[1] + 9 * maths.sin(angle + pi / 4)
+  cv.line(img, (int(p[0]), int(p[1])), (int(q[0]), int(q[1])), color, 3, cv.LINE_AA)
+ 
+  p[0] = q[0] + 9 * maths.cos(angle - pi / 4)
+  p[1] = q[1] + 9 * maths.sin(angle - pi / 4)
+  cv.line(img, (int(p[0]), int(p[1])), (int(q[0]), int(q[1])), color, 3, cv.LINE_AA)
+  ## [visualization1]
+
+
+def getOrientation(pts, img):
+  ## [pca]
+  # Construct a buffer used by the pca analysis
+  sz = len(pts)
+  data_pts = np.empty((sz, 2), dtype=np.float64)
+  for i in range(data_pts.shape[0]):
+    data_pts[i,0] = pts[i,0,0]
+    data_pts[i,1] = pts[i,0,1]
+ 
+  # Perform PCA analysis
+  mean = np.empty((0))
+  mean, eigenvectors, eigenvalues = cv.PCACompute2(data_pts, mean)
+ 
+  # Store the center of the object
+  cntr = (int(mean[0,0]), int(mean[0,1]))
+  ## [pca]
+ 
+  ## [visualization]
+  # Draw the principal components
+  cv.circle(img, cntr, 3, (255, 0, 255), 2)
+  p1 = (cntr[0] + 0.02 * eigenvectors[0,0] * eigenvalues[0,0], cntr[1] + 0.02 * eigenvectors[0,1] * eigenvalues[0,0])
+  p2 = (cntr[0] - 0.02 * eigenvectors[1,0] * eigenvalues[1,0], cntr[1] - 0.02 * eigenvectors[1,1] * eigenvalues[1,0])
+  drawAxis(img, cntr, p1, (255, 255, 0), 1)
+  drawAxis(img, cntr, p2, (0, 0, 255), 5)
+ 
+  angle = maths.atan2(eigenvectors[0,1], eigenvectors[0,0]) # orientation in radians
+  ## [visualization]
+ 
+  # Label with the rotation angle
+  #label = "  Rotation Angle: " + str(-int(np.rad2deg(angle)) - 90) + " degrees"
+  #textbox = cv.rectangle(img, (cntr[0], cntr[1]-25), (cntr[0] + 250, cntr[1] + 10), (255,255,255), -1)
+  #cv.putText(img, label, (cntr[0], cntr[1]), cv.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,0), 1, cv.LINE_AA)
+ 
+  return angle'''
+
+
+# returns angle of contour
+def get_angle(contour):
+     # Get the approximate polygon around the contour
+    epsilon = 0.04 * cv.arcLength(contour, True)
+    approx = cv.approxPolyDP(contour, epsilon, True)
+    # Get the centroid of the polygon
+    M = cv.moments(approx)
+    cx = int(M['m10']/M['m00'])
+    cy = int(M['m01']/M['m00'])
+    # Get the orientation angle of the polygon
+    angle = np.arctan2(cy - approx[0][0][1], cx - approx[0][0][0])
+    angle = np.degrees(angle)
+    if angle < 0:
+        angle += 180
+    return angle
+
+
 
 # scale and show image for printing
 def showImg(label, img):
@@ -99,6 +176,8 @@ def getColours(cube):
     colours = []
     centroids = []
     hsv_vals =[]
+    shapes = []
+    angles = []
     blank = np.zeros(cube.shape, dtype='uint8')
     # for each contour check if it is a square
     for i in range(len(contours)):
@@ -110,14 +189,23 @@ def getColours(cube):
         perimeter = cv.arcLength(contour, True)
         squareness = cv.norm(((perimeter / 4) * (perimeter / 4)) - area)
 
-        if parent == -1 and area > 750 and area < 4000 and squareness < 250:
+        epsilon = 0.04 * perimeter
+        approx = cv.approxPolyDP(contour, epsilon, True)
+        hull = cv.convexHull(contour)
 
-            # display contours
+        #if parent == -1 and area > 750 and area < 4000 and squareness < 250:
+        if parent == -1 and area > 750 and area < 4000: #and squareness < 400:
+
+
+           ''' # display contours
             cv.drawContours(blank, contours, i, (random.randint(0,255), random.randint(0, 255), random.randint(0, 255)), 1)
             showImg('contours',blank)
-            #print(area, squareness, perimeter)
+            #print(area, squareness, perimeter)'''
+
+            #cv.drawContours(output, [approx], 0, (0,0,255), 2)
 
         # likely candidate for piece
+        if parent == -1 and area > 750 and area < 4000 and squareness < 210 and len(approx) == 4:
         #if parent == -1 and area > 2000 and area < 8000 and squareness < 120:
 
             # add contour to image
@@ -125,6 +213,13 @@ def getColours(cube):
             # get coords of top left corner for ordering
             x, y, _, _ = cv.boundingRect(contour)
             #cv.putText(img=output, text=(str(x)+' '+str(y)), org=(x, y), fontFace=cv.FONT_HERSHEY_TRIPLEX, fontScale=0.6, color=(225, 0, 255),thickness=1)
+
+            # add contour to list
+            shapes.append(contour)
+
+            #cv.putText(img=output, text=str(int(get_angle(contour))), org=(x, y), fontFace=cv.FONT_HERSHEY_TRIPLEX, fontScale=0.6, color=(225, 0, 255),thickness=1)
+            angles.append(int(get_angle(contour)))
+
 
             # get centroid of contour
             M = cv.moments(contour)
@@ -138,9 +233,10 @@ def getColours(cube):
             #mask = cv.cvtColor(mask, cv.COLOR_GRAY2BGR)
             lab_img = cv.cvtColor(cube, cv.COLOR_BGR2LAB)
             mean = cv.mean(lab_img, mask=mask)[:-1]
+            #std = cv.meanStdDev(lab_img, mask-mask)
+            #std = np.mean(std[1])
             hsv_vals.append([int(a) for a in mean])
             mean = np.uint8([[mean]])
-            #colours.append(find_closest_color(mean))
             
             #try knn
             colour_names =  ['w', 'r', 'b', 'o', 'g', 'y']
@@ -149,14 +245,18 @@ def getColours(cube):
             index = knn.predict(mean[0])[0]
             colour = colour_list[index]
             colours.append(colour)
+
+            #getOrientation(contour, output)
     
+    if len(shapes) > 0:
+        order_faces(shapes, colours)
+    #print(angles)
+
+    # won't work for 4 colours anyomore
     if len(colours) == 4:
         # order colours by contour location 
 
-        #print('min', min_val)
-        #print('max',max_val)
-
-        colours = order_faces(centroids, colours)
+        #colours = order_faces(shapes, colours)
 
         #create box in corner for colours
         side_len = 50
@@ -202,9 +302,6 @@ def getState(cube):
 
 
 knn = joblib.load('knn.joblib')
-# max and min values for colour updating
-max_val = [0,0,0]
-min_val = [255,255,255]
 # set video flag
 video = True
 update_colours  = False

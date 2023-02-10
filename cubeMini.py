@@ -1,5 +1,5 @@
 import numpy as np
-from random import randint, choice
+from random import choice
 
 class RubiksCube:
    
@@ -27,15 +27,19 @@ class RubiksCube:
                     q +=1
         self.array = blank
 
-    # generates default array of cube along with colour choice
+    # returns state array
     def getArray(self):
+        return self.array
+
+    # generates default array of cube along with colour choice
+    def defaultArray(self):
         colours = ["w", "y", "r", "o", "b", "g"] 
         cube = [[[colours[i]]*2 for j in range(2)] for i in range(6)]
         return cube
 
     # put cube in default state of solved
     def setSolved(self):
-        self.array = self.getArray()
+        self.array = self.defaultArray()
 
     # turn cube into string represention for easy storage
     def stringify(self):
