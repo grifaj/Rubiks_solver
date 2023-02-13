@@ -97,6 +97,22 @@ class RubiksCube:
 
         return moves
 
+    # convert string representation of move and perform that move
+    def move2func(self, move):
+        (f, d) = move
+        if f == 'u':
+            self.up() if d == 'c' else self.up_prime()
+        if f == 'l':
+            self.left() if d == 'c' else self.left_prime()
+        if f == 'r':
+            self.right() if d == 'c' else self.right_prime()
+        if f == 'f':
+            self.front() if d == 'c' else self.front_prime()
+        if f == 'd':
+            self.down() if d == 'c' else self.down_prime()
+        if f == 'b':
+            self.back() if d == 'c' else self.back_prime()
+
 
     def front(self):
         cube = np.array(self.array)

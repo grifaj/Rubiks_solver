@@ -8,13 +8,14 @@ import pathlib
 
 class CubeSolver:
    
-    def __init__(self):
+    def __init__(self, build_db = False):
 
-        path = '/home/grifaj/Documents/y3project/Rubiks_solver/'
-        with open(path+'heuristic.json') as f:
-            heuristic_data = json.load(f)
+        if not build_db:
+            path = '/home/grifaj/Documents/y3project/Rubiks_solver/'
+            with open(path+'heuristic.json') as f:
+                heuristic_data = json.load(f)
 
-        self.heuristic = heuristic_data
+            self.heuristic = heuristic_data
 
     def colour_independant(self, state):
         num = 0
@@ -81,10 +82,11 @@ class CubeSolver:
 
 # database building code hoplefuly no longer needed
 def build_heuristic_db():
+    solver = CubeSolver(build_db=True)
     max_moves  = 13
     cube = RubiksCube()
     state = cube.stringify()
-    heuristic = {CubeSolver.colour_independant(state): 0}
+    heuristic = {solver.colour_independant(state): 0}
     total = [0, 6, 27, 120, 534, 2256, 8969, 33058, 114149, 360508, 930588, 1350852, 782536, 90280, 276]
     pbar = tqdm(total=sum(total[:max_moves+1]))
 
@@ -96,7 +98,7 @@ def build_heuristic_db():
     # Start the worker threads
     num_threads = 6
     threads = []
-    for i in range(num_threads):
+    for _ in range(num_threads):
         t = Thread(target=worker, args=(que, max_moves, heuristic, pbar, lock))
         t.start()
         threads.append(t)
@@ -112,6 +114,7 @@ def build_heuristic_db():
     pbar.close()
 
 def worker(que, max_moves, heuristic, pbar, lock):
+    solver = CubeSolver(build_db=True)
     while True:
         with lock:
             if que.empty():
@@ -119,10 +122,10 @@ def worker(que, max_moves, heuristic, pbar, lock):
             s, d = que.get()
         if d >= max_moves:
             continue
-        for next_action in CubeSolver.generate_next_states(s):
+        for next_action in solver.generate_next_states(s):
             a_str = next_action[0]
             # convert to colour independant representation
-            a_str_num = CubeSolver.colour_independant(a_str)
+            a_str_num = solver.colour_independant(a_str)
             if a_str_num not in heuristic or heuristic[a_str_num] > d + 1:
                 heuristic[a_str_num] = d + 1
                 que.put((a_str, d+1))

@@ -22,7 +22,7 @@ def group_cubes(contours, threshold):
     groups.append(current_group)
     return groups
 
-# gets the 4 colours detected on the face and orders them to add to the state
+'''# gets the 4 colours detected on the face and orders them to add to the state
 # TODO will need to amend this to partion contours into faces 
 def order_faces(contours, colours):
 
@@ -56,7 +56,35 @@ def order_faces(contours, colours):
             # seperate colours out in new order
             colours = [y for x,y in new_order]
 
-    return colours
+    return colours'''
+
+# assume 4 cubies
+def order_faces(contours, colours):
+
+    #get postions of faces
+    centres = [get_centre(c) for c in contours]
+
+    combined = zip(centres, colours)
+    combined = list(combined)
+
+    #order by y, gives top and bottom row
+    combined = sorted(combined, key=lambda x: x[0][1])
+    top = combined[:2]
+    bottom = combined[2:]
+
+    #order top and bottom by x value to give left and right
+    top = sorted(top, key=lambda x: x[0][0])
+    bottom = sorted(bottom, key=lambda x: x[0][0])
+
+    #combine to give full sorted list
+    new_order = top + bottom
+
+    # seperate colours out in new order
+    [centres, colours] = map(list, zip(*new_order))
+
+    return centres, colours
+
+
 
 # returns centre of the contour
 def get_centre(contour):
@@ -65,85 +93,6 @@ def get_centre(contour):
     cY = int(M["m01"] / M["m00"])
 
     return (cX, cY)
-
-'''def drawAxis(img, p_, q_, color, scale):
-  p = list(p_)
-  q = list(q_)
-  pi = maths.pi
- 
-  ## [visualization1]
-  angle = maths.atan2(p[1] - q[1], p[0] - q[0]) # angle in radians
-  hypotenuse = maths.sqrt((p[1] - q[1]) * (p[1] - q[1]) + (p[0] - q[0]) * (p[0] - q[0]))
- 
-  # Here we lengthen the arrow by a factor of scale
-  q[0] = p[0] - scale * hypotenuse * maths.cos(angle)
-  q[1] = p[1] - scale * hypotenuse * maths.sin(angle)
-  cv.line(img, (int(p[0]), int(p[1])), (int(q[0]), int(q[1])), color, 3, cv.LINE_AA)
- 
-  # create the arrow hooks
-  p[0] = q[0] + 9 * maths.cos(angle + pi / 4)
-  p[1] = q[1] + 9 * maths.sin(angle + pi / 4)
-  cv.line(img, (int(p[0]), int(p[1])), (int(q[0]), int(q[1])), color, 3, cv.LINE_AA)
- 
-  p[0] = q[0] + 9 * maths.cos(angle - pi / 4)
-  p[1] = q[1] + 9 * maths.sin(angle - pi / 4)
-  cv.line(img, (int(p[0]), int(p[1])), (int(q[0]), int(q[1])), color, 3, cv.LINE_AA)
-  ## [visualization1]
-
-
-def getOrientation(pts, img):
-  ## [pca]
-  # Construct a buffer used by the pca analysis
-  sz = len(pts)
-  data_pts = np.empty((sz, 2), dtype=np.float64)
-  for i in range(data_pts.shape[0]):
-    data_pts[i,0] = pts[i,0,0]
-    data_pts[i,1] = pts[i,0,1]
- 
-  # Perform PCA analysis
-  mean = np.empty((0))
-  mean, eigenvectors, eigenvalues = cv.PCACompute2(data_pts, mean)
- 
-  # Store the center of the object
-  cntr = (int(mean[0,0]), int(mean[0,1]))
-  ## [pca]
- 
-  ## [visualization]
-  # Draw the principal components
-  cv.circle(img, cntr, 3, (255, 0, 255), 2)
-  p1 = (cntr[0] + 0.02 * eigenvectors[0,0] * eigenvalues[0,0], cntr[1] + 0.02 * eigenvectors[0,1] * eigenvalues[0,0])
-  p2 = (cntr[0] - 0.02 * eigenvectors[1,0] * eigenvalues[1,0], cntr[1] - 0.02 * eigenvectors[1,1] * eigenvalues[1,0])
-  drawAxis(img, cntr, p1, (255, 255, 0), 1)
-  drawAxis(img, cntr, p2, (0, 0, 255), 5)
- 
-  angle = maths.atan2(eigenvectors[0,1], eigenvectors[0,0]) # orientation in radians
-  ## [visualization]
- 
-  # Label with the rotation angle
-  #label = "  Rotation Angle: " + str(-int(np.rad2deg(angle)) - 90) + " degrees"
-  #textbox = cv.rectangle(img, (cntr[0], cntr[1]-25), (cntr[0] + 250, cntr[1] + 10), (255,255,255), -1)
-  #cv.putText(img, label, (cntr[0], cntr[1]), cv.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,0), 1, cv.LINE_AA)
- 
-  return angle'''
-
-
-# returns angle of contour
-def get_angle(contour):
-     # Get the approximate polygon around the contour
-    epsilon = 0.04 * cv.arcLength(contour, True)
-    approx = cv.approxPolyDP(contour, epsilon, True)
-    # Get the centroid of the polygon
-    M = cv.moments(approx)
-    cx = int(M['m10']/M['m00'])
-    cy = int(M['m01']/M['m00'])
-    # Get the orientation angle of the polygon
-    angle = np.arctan2(cy - approx[0][0][1], cx - approx[0][0][0])
-    angle = np.degrees(angle)
-    if angle < 0:
-        angle += 180
-    return angle
-
-
 
 # scale and show image for printing
 def showImg(label, img):
@@ -155,14 +104,20 @@ def showImg(label, img):
     img = cv.resize(img, dimensions, interpolation=cv.INTER_AREA)
     cv.imshow(label,img)
 
-# returns the colours of the shown face
-def getColours(cube):
+def inferCubie(centres):
+    # find greatest distance between 2 cubes
+    return
+
+
+
+# returns data on the shown face
+def getFace(cube, verbose=True, update_colours=False):
     
     grey = cv.cvtColor(cube, cv.COLOR_BGR2GRAY)
     blur = cv.blur(cube,(3,3))
     canny = cv.Canny(blur, 55, 100, L2gradient = True) #60, 100
 
-    showImg('edges',canny)
+    if verbose: showImg('edges',canny)
 
     # get contours
     contours, hierarchies = cv.findContours(canny, cv.RETR_TREE, cv.CHAIN_APPROX_NONE)
@@ -174,11 +129,9 @@ def getColours(cube):
 
     output = cube
     colours = []
-    centroids = []
+    centres = []
     hsv_vals =[]
-    shapes = []
-    angles = []
-    blank = np.zeros(cube.shape, dtype='uint8')
+    shapes = [] # list of contours
     # for each contour check if it is a square
     for i in range(len(contours)):
         contour = contours[i]
@@ -193,17 +146,6 @@ def getColours(cube):
         approx = cv.approxPolyDP(contour, epsilon, True)
         hull = cv.convexHull(contour)
 
-        #if parent == -1 and area > 750 and area < 4000 and squareness < 250:
-        if parent == -1 and area > 750 and area < 4000: #and squareness < 400:
-
-
-           ''' # display contours
-            cv.drawContours(blank, contours, i, (random.randint(0,255), random.randint(0, 255), random.randint(0, 255)), 1)
-            showImg('contours',blank)
-            #print(area, squareness, perimeter)'''
-
-            #cv.drawContours(output, [approx], 0, (0,0,255), 2)
-
         # likely candidate for piece
         if parent == -1 and area > 750 and area < 4000 and squareness < 210 and len(approx) == 4:
         #if parent == -1 and area > 2000 and area < 8000 and squareness < 120:
@@ -214,49 +156,39 @@ def getColours(cube):
             x, y, _, _ = cv.boundingRect(contour)
             #cv.putText(img=output, text=(str(x)+' '+str(y)), org=(x, y), fontFace=cv.FONT_HERSHEY_TRIPLEX, fontScale=0.6, color=(225, 0, 255),thickness=1)
 
-            # add contour to list
-            shapes.append(contour)
-
-            #cv.putText(img=output, text=str(int(get_angle(contour))), org=(x, y), fontFace=cv.FONT_HERSHEY_TRIPLEX, fontScale=0.6, color=(225, 0, 255),thickness=1)
-            angles.append(int(get_angle(contour)))
-
-
-            # get centroid of contour
-            M = cv.moments(contour)
-            cX = int(M["m10"] / M["m00"])
-            cY = int(M["m01"] / M["m00"])
-            centroids.append((cX, cY))
+            shapes.append(contour) # add contour to list
+            centres.append(get_centre(contour)) # add square centre
 
             #get average colour
             mask = np.zeros(grey.shape, np.uint8) 
             cv.drawContours(mask, [contour], 0, 255, -1)
-            #mask = cv.cvtColor(mask, cv.COLOR_GRAY2BGR)
             lab_img = cv.cvtColor(cube, cv.COLOR_BGR2LAB)
             mean = cv.mean(lab_img, mask=mask)[:-1]
-            #std = cv.meanStdDev(lab_img, mask-mask)
-            #std = np.mean(std[1])
             hsv_vals.append([int(a) for a in mean])
             mean = np.uint8([[mean]])
             
-            #try knn
-            colour_names =  ['w', 'r', 'b', 'o', 'g', 'y']
+            #try knn for classifiing colours
             colour_list = [(255,255,255),(20,18,137),(172,72,13),(37,85,255),(76,155,25),(47,213,254)]
-
             index = knn.predict(mean[0])[0]
             colour = colour_list[index]
             colours.append(colour)
 
-            #getOrientation(contour, output)
-    
-    if len(shapes) > 0:
-        order_faces(shapes, colours)
-    #print(angles)
+    # outputs objects to use, might create cubie class
+        # hsv_vals: colour of face
+        # shapes: contours of face
+        # centres: centre point of each face
+
+    # should be able to approximate final cubie
+    if len(colours) == 3:
+        hidden_centre = inferCubie(centres)
+
+        cv.circle(output,hidden_centre,5,(0,0,0), 5)
+
 
     # won't work for 4 colours anyomore
     if len(colours) == 4:
         # order colours by contour location 
-
-        #colours = order_faces(shapes, colours)
+        centres, colours = order_faces(shapes, colours)
 
         #create box in corner for colours
         side_len = 50
@@ -267,18 +199,22 @@ def getColours(cube):
 
         # return face in the form of an array
         colour_names =  ['w', 'r', 'b', 'o', 'g', 'y']
-        colour_list = [(255,255,255),(20,18,137),(172,72,13),(37,85,255),(76,155,25),(47,213,254)]
         try:
             face = [colour_names[colour_list.index(c)] for c in colours]
             face = [face[:2], face[2:]]
         except:
             print('unknown colour')
+        
+        if update_colours:
+            return hsv_vals
     
-    return centroids, hsv_vals, output
+        return centres, face
+    
+    #return centroids, hsv_vals, output
 
 def getState(cube):
     # get colours of displayed face
-    centroids, colours, frame = getColours(cube)
+    centroids, colours, frame = getFace(cube)
     #print(side)
 
     #print(centroids)
@@ -300,62 +236,68 @@ def getState(cube):
     #pass frame back to main for display
     return frame, colours
 
-
+# file setups
 knn = joblib.load('knn.joblib')
-# set video flag
-video = True
-update_colours  = False
-# initilise centroid tracker
-ct = CentroidTracker()
-# colour data file
-f = open("/home/grifaj/Documents/y3project/Rubiks_solver/colour_data.txt", "a")
 
-if video:
-    frame_rate = 20 # set frame rate
-    prev = 0
-    cap = cv.VideoCapture(0)
-    if not cap.isOpened():
-        print("Cannot open camera")
-        exit()
-    while True:
-        time_elapsed = time.time() - prev
-        ret, frame = cap.read()
 
-        if not ret:
-            print("Can't receive frame (stream end?). Exiting ...")
-            break
+if __name__ == '__main__':
 
-        if time_elapsed > 1./frame_rate:
-            prev = time.time()
+    # set video flag
+    video = True
+    update_colours  = False
+    # initilise centroid tracker
+    ct = CentroidTracker()
+    # colour data file
+    f = open("/home/grifaj/Documents/y3project/Rubiks_solver/colour_data.txt", "a")
 
-            ## per frame operations ##
-            output, colours = getState(frame)
+    if video:
+        frame_rate = 20 # set frame rate
+        prev = 0
+        cap = cv.VideoCapture(0)
+        if not cap.isOpened():
+            print("Cannot open camera")
+            exit()
+        while True:
+            time_elapsed = time.time() - prev
+            ret, frame = cap.read()
 
-            if update_colours:
-                label  = 'o'
-                for c in colours:
-                    out = ''
-                    for i in c:
-                        out += str(i)+','
-                    f.write(out+label+'\n')
+            if not ret:
+                print("Can't receive frame (stream end?). Exiting ...")
+                break
 
-            # Display the resulting frame
-            showImg('frame',output)
+            if time_elapsed > 1./frame_rate:
+                prev = time.time()
 
-        if cv.waitKey(1) == ord('q'):
-            break
-    # When everything done, release the capture
-    cap.release()
-    cv.destroyAllWindows()
-    f.close()
+                ## per frame operations ##
+                #output, colours = getState(frame) bypass get state for now
+                colours = getFace(frame, update_colours=update_colours)
 
-    cv.waitKey(0)
+                if update_colours:
+                    if colours is not None:
+                        label  = 'w'
+                        for c in colours:
+                            out = ''
+                            for i in c:
+                                out += str(i)+','
+                            f.write(out+label+'\n')
 
-else: #photo only
-    #cube = cv.imread('C:\\Users\\Alfie\\Documents\\uni_work\\year3\\cs310\\github\Rubiks_solver\\good521.JPG')
-    cube = cv.imread('/home/grifaj/Documents/y3project/Rubiks_solver/test1.jpg')
+                # Display the resulting frame
+                showImg('frame',frame)
 
-    output = getColours(cube)
-    showImg('output', output)
+            if cv.waitKey(1) == ord('q'):
+                break
+        # When everything done, release the capture
+        cap.release()
+        cv.destroyAllWindows()
+        f.close()
 
-    cv.waitKey(0)
+        cv.waitKey(0)
+
+    else: #photo only
+        #cube = cv.imread('C:\\Users\\Alfie\\Documents\\uni_work\\year3\\cs310\\github\Rubiks_solver\\good521.JPG')
+        cube = cv.imread('/home/grifaj/Documents/y3project/Rubiks_solver/test1.jpg')
+
+        output = getFace(cube)
+        showImg('output', output)
+
+        cv.waitKey(0)
