@@ -1,10 +1,12 @@
 import cv2 as cv
 import numpy as np
 import time
-import random
 from centroidtracker import CentroidTracker
 import joblib
 import math as maths
+from sympy import Point, Segment
+from cubie import Cubie
+
 
 # groups faces based on closness of anlges to each other
 def group_cubes(contours, threshold):
@@ -59,10 +61,11 @@ def order_faces(contours, colours):
     return colours'''
 
 # assume 4 cubies
-def order_faces(contours, colours):
+def order_faces(cubies):
 
     #get postions of faces
-    centres = [get_centre(c) for c in contours]
+    centres = [c.centre for c in cubies]
+    colours = [c.colour for c in cubies]
 
     combined = zip(centres, colours)
     combined = list(combined)
@@ -84,16 +87,6 @@ def order_faces(contours, colours):
 
     return centres, colours
 
-
-
-# returns centre of the contour
-def get_centre(contour):
-    M = cv.moments(contour)
-    cX = int(M["m10"] / M["m00"])
-    cY = int(M["m01"] / M["m00"])
-
-    return (cX, cY)
-
 # scale and show image for printing
 def showImg(label, img):
     #scale image
@@ -104,17 +97,35 @@ def showImg(label, img):
     img = cv.resize(img, dimensions, interpolation=cv.INTER_AREA)
     cv.imshow(label,img)
 
-def inferCubie(centres):
+def inferCubie(frame, centres):
     # find greatest distance between 2 cubes
-    return
+    maxDist = 0
+    points = ()
+    for i in range(len(centres)):
+        for j in range(len(centres)):
+            if i < j:
+                dist  = maths.dist(centres[i], centres[j])
+                if dist > maxDist:
+                    maxDist = dist
+                    points = (centres[i], centres[j])
 
+    # get perpendicular bisector of that line, of same length
+    s1 = Segment(Point(points[0]), Point(points[1]))
+    cv.line(frame,points[0],points[1], (255,255,255),3)
+    perpBisec = s1.perpendicular_bisector()
 
+    ends = []
+    for point in perpBisec.points:
+        ends.append((int(point.x), int(point.y)))
+
+    cv.line(frame,ends[0], ends[1],(0,0,0),3)
+    return ends
 
 # returns data on the shown face
-def getFace(cube, verbose=True, update_colours=False):
+def getFace(frame, verbose=True, update_colours=False):
     
-    grey = cv.cvtColor(cube, cv.COLOR_BGR2GRAY)
-    blur = cv.blur(cube,(3,3))
+    # blur and get edges from frame
+    blur = cv.blur(frame,(3,3))
     canny = cv.Canny(blur, 55, 100, L2gradient = True) #60, 100
 
     if verbose: showImg('edges',canny)
@@ -123,16 +134,12 @@ def getFace(cube, verbose=True, update_colours=False):
     contours, hierarchies = cv.findContours(canny, cv.RETR_TREE, cv.CHAIN_APPROX_NONE)
 
     if hierarchies is None:
-        return cube
+        return
     else:
         hierarchies = hierarchies[0]
 
-    output = cube
-    colours = []
-    centres = []
-    hsv_vals =[]
-    shapes = [] # list of contours
-    # for each contour check if it is a square
+    cubies  = []
+    # select candidates for cubies
     for i in range(len(contours)):
         contour = contours[i]
         hierarchy = hierarchies[i]
@@ -144,74 +151,49 @@ def getFace(cube, verbose=True, update_colours=False):
 
         epsilon = 0.04 * perimeter
         approx = cv.approxPolyDP(contour, epsilon, True)
-        hull = cv.convexHull(contour)
 
         # likely candidate for piece
         if parent == -1 and area > 750 and area < 4000 and squareness < 210 and len(approx) == 4:
-        #if parent == -1 and area > 2000 and area < 8000 and squareness < 120:
 
             # add contour to image
-            cv.drawContours(output, contours, i, (0,255,0), 2)
-            # get coords of top left corner for ordering
-            x, y, _, _ = cv.boundingRect(contour)
-            #cv.putText(img=output, text=(str(x)+' '+str(y)), org=(x, y), fontFace=cv.FONT_HERSHEY_TRIPLEX, fontScale=0.6, color=(225, 0, 255),thickness=1)
+            cv.drawContours(frame, contours, i, (0,255,0), 2)
+           
+            # create new cubie object
+            cubies.append(Cubie(frame=frame, contour=contour))
 
-            shapes.append(contour) # add contour to list
-            centres.append(get_centre(contour)) # add square centre
 
-            #get average colour
-            mask = np.zeros(grey.shape, np.uint8) 
-            cv.drawContours(mask, [contour], 0, 255, -1)
-            lab_img = cv.cvtColor(cube, cv.COLOR_BGR2LAB)
-            mean = cv.mean(lab_img, mask=mask)[:-1]
-            hsv_vals.append([int(a) for a in mean])
-            mean = np.uint8([[mean]])
-            
-            #try knn for classifiing colours
-            colour_list = [(255,255,255),(20,18,137),(172,72,13),(37,85,255),(76,155,25),(47,213,254)]
-            index = knn.predict(mean[0])[0]
-            colour = colour_list[index]
-            colours.append(colour)
+    ''' # should be able to approximate final cubie
+    if len(cubies) == 3:
+        hidden_centre = inferCubie(frame, centres)
 
-    # outputs objects to use, might create cubie class
-        # hsv_vals: colour of face
-        # shapes: contours of face
-        # centres: centre point of each face
+        #cv.circle(output,hidden_centre,5,(0,0,0), 5)
 
-    # should be able to approximate final cubie
-    if len(colours) == 3:
-        hidden_centre = inferCubie(centres)
-
-        cv.circle(output,hidden_centre,5,(0,0,0), 5)
-
+'''
+    # group cubies by area to get main face
 
     # won't work for 4 colours anyomore
-    if len(colours) == 4:
+    if len(cubies) == 4:
         # order colours by contour location 
-        centres, colours = order_faces(shapes, colours)
+        centres, colours = order_faces(cubies)
 
         #create box in corner for colours
         side_len = 50
         pos = [[0,2],[1,3]]
         for i in range(len(pos)):
             for j in range(len(pos[i])):
-                cv.rectangle(output, (i*side_len,j*side_len),((i+1)*side_len,(j+1)*side_len), colours[pos[i][j]],-1)
+                cv.rectangle(frame, (i*side_len,j*side_len),((i+1)*side_len,(j+1)*side_len), colours[pos[i][j]],-1)
+
+        # if updating colours 
+        if update_colours:
+            return [c.hsvVal for c in cubies]
 
         # return face in the form of an array
-        colour_names =  ['w', 'r', 'b', 'o', 'g', 'y']
-        try:
-            face = [colour_names[colour_list.index(c)] for c in colours]
-            face = [face[:2], face[2:]]
-        except:
-            print('unknown colour')
-        
-        if update_colours:
-            return hsv_vals
-    
-        return centres, face
-    
-    #return centroids, hsv_vals, output
+        colour_dict = {(255,255,255):'w', (20,18,137):'r', (172,72,13):'b', (37,85,255):'o', (76,155,25):'g', (47,213,254):'y'}
+        face = [colour_dict[c] for c in colours]
+        face = [face[:2], face[2:]]
 
+        return centres, face
+        
 def getState(cube):
     # get colours of displayed face
     centroids, colours, frame = getFace(cube)
@@ -235,9 +217,6 @@ def getState(cube):
 
     #pass frame back to main for display
     return frame, colours
-
-# file setups
-knn = joblib.load('knn.joblib')
 
 
 if __name__ == '__main__':
