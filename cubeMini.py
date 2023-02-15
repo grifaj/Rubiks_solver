@@ -244,3 +244,76 @@ class RubiksCube:
         # rotate clockwise three times
         for _ in range(3):
             self.back()
+
+
+    # axial rotatations
+    def x(self):
+        cube = np.array(self.array)
+        # make temp of top
+        temp = np.copy(cube[3, :, :])
+        # move left to top
+        cube[3, :, :] = np.flip(cube[5, :, 1])
+        # move bottom to left
+        cube[5, :, :] = cube[2, :, :]
+        # move right to bottom
+        cube[2, :, :] = np.flip(cube[4, :, 0])
+        # move top to right
+        cube[4, :, :] = temp
+        # rotate front face clockwise
+        cube[0, :, :] = np.rot90(cube[0, :, :],-1)
+        # rotate back face anti-clockwise
+        cube[1, :, :] = np.rot90(cube[1, :, :],1)
+        self.array = cube
+
+    def x_prime(self):
+        # rotate clockwise three times
+        for _ in range(3):
+            self.x()
+
+    def y(self):
+        cube = np.array(self.array)
+        # make temp of front
+        temp = np.copy(cube[0, :, :])
+        # move right to front
+        cube[0, :, :] = cube[4, :, :]
+        # move back to right
+        cube[4, :, :] = cube[1, :, :]
+        # move left to back
+        cube[1, :, :] = cube[5, :, :]
+        # move front to left
+        cube[5, :, :] = temp
+        # rotate up face clockwise
+        cube[3, :, :] = np.rot90(cube[3, :, :],-1)
+        # rotate down face anti-clockwise
+        cube[2, :, :] = np.rot90(cube[2, :, :],1)
+        self.array = cube
+
+    
+    def y_prime(self):
+        # rotate clockwise three times
+        for _ in range(3):
+            self.y()
+
+
+    def z(self):
+        cube = np.array(self.array)
+        # make temp of top edge
+        temp = np.copy(cube[3, :, :])
+        #move front edge to top edge
+        cube[3, :, :] = cube[0, :, :]
+        # move bottom edge to front edge
+        cube[0, :, :] = cube[2, :, :]
+        # move back edge to bottom edge
+        cube[2, :, :] = np.flip(cube[1, :, :])
+        # move top edge to back edge
+        cube[1, :, :] = np.flip(temp)
+        # rotate right face clockwise
+        cube[4, :, :] = np.rot90(cube[4, :, :],-1)
+        # rotate left face anti clockwise
+        cube[5, :, :] = np.rot90(cube[5, :, :],1)
+        self.array = cube
+
+    def z_prime(self):
+        # rotate clockwise three times
+        for _ in range(3):
+            self.z()
