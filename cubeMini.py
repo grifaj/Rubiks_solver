@@ -9,9 +9,11 @@ class RubiksCube:
         state = None,
         array = [[[]]]
     ):
-
-        if state is None:
-                self.setSolved()
+        if array != [[[]]]:
+            self.array = array
+            self.stringify()
+        elif state is None:
+            self.setSolved()
         else:
             self.setState(state)
 

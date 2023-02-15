@@ -1,64 +1,26 @@
 import cv2 as cv
 import numpy as np
 import time
-from centroidtracker import CentroidTracker
-import joblib
-import math as maths
-from sympy import Point, Segment
 from cubie import Cubie
-
+import globals
 
 # groups faces based on closness of anlges to each other
-def group_cubes(contours, threshold):
-    groups = []
-    areas = [cv.contourArea(c) for c in contours]
-    combined = list(zip(contours, areas))
-    combined = sorted(combined, key=lambda x: x[1])
-    current_group = [combined[0][1]]
-    for i in range(1, len(combined)):
-        if abs(combined[i][1] - current_group[-1][1]) <= threshold:
-            current_group.append(combined[i])
-        else:
-            groups.append(current_group)
-            current_group = [combined[i]]
-    groups.append(current_group)
-    return groups
+def group_cubes(cubies, threshold):
+    if len(cubies) > 0:
+        areas = [cv.contourArea(c.contour) for c in cubies]
 
-'''# gets the 4 colours detected on the face and orders them to add to the state
-# TODO will need to amend this to partion contours into faces 
-def order_faces(contours, colours):
-
-    # split cubes into faces
-    groups = group_cubes(contours,150)
-
-    print(len(groups), groups)
-
-    # order faces in each group if it has all 4 faces
-    for group in groups:
-        if len(group) == 4:
-
-            #get postions of faces
-            face_pos = [get_centre(c) for c in contours]
-
-            combined = zip(face_pos, colours)
-            combined = list(combined)
-
-            #order by y, gives top and bottom row
-            combined = sorted(combined, key=lambda x: x[0][1])
-            top = combined[:2]
-            bottom = combined[2:]
-
-            #order top and bottom by x value to give left and right
-            top = sorted(top, key=lambda x: x[0][0])
-            bottom = sorted(bottom, key=lambda x: x[0][0])
-
-            #combine to give full sorted list
-            new_order = top + bottom
-
-            # seperate colours out in new order
-            colours = [y for x,y in new_order]
-
-    return colours'''
+        groups = []
+        combined = list(zip(cubies, areas))
+        combined = sorted(combined, key=lambda x: x[1])
+        current_group = [combined[0]]
+        for i in range(1, len(combined)):
+            if abs(combined[i][1] - current_group[-1][1]) <= threshold:
+                current_group.append(combined[i])
+            else:
+                groups.append(current_group)
+                current_group = [combined[i]]
+        groups.append(current_group)
+        return groups
 
 # assume 4 cubies
 def order_faces(cubies):
@@ -87,40 +49,6 @@ def order_faces(cubies):
 
     return centres, colours
 
-# scale and show image for printing
-def showImg(label, img):
-    #scale image
-    scale = 1
-    width = int(img.shape[1] *scale)
-    height = int(img.shape[0] *scale)
-    dimensions = (width, height)
-    img = cv.resize(img, dimensions, interpolation=cv.INTER_AREA)
-    cv.imshow(label,img)
-
-def inferCubie(frame, centres):
-    # find greatest distance between 2 cubes
-    maxDist = 0
-    points = ()
-    for i in range(len(centres)):
-        for j in range(len(centres)):
-            if i < j:
-                dist  = maths.dist(centres[i], centres[j])
-                if dist > maxDist:
-                    maxDist = dist
-                    points = (centres[i], centres[j])
-
-    # get perpendicular bisector of that line, of same length
-    s1 = Segment(Point(points[0]), Point(points[1]))
-    cv.line(frame,points[0],points[1], (255,255,255),3)
-    perpBisec = s1.perpendicular_bisector()
-
-    ends = []
-    for point in perpBisec.points:
-        ends.append((int(point.x), int(point.y)))
-
-    cv.line(frame,ends[0], ends[1],(0,0,0),3)
-    return ends
-
 # returns data on the shown face
 def getFace(frame, verbose=True, update_colours=False):
     
@@ -128,7 +56,7 @@ def getFace(frame, verbose=True, update_colours=False):
     blur = cv.blur(frame,(3,3))
     canny = cv.Canny(blur, 55, 100, L2gradient = True) #60, 100
 
-    if verbose: showImg('edges',canny)
+    if verbose: cv.imshow('edges',canny)
 
     # get contours
     contours, hierarchies = cv.findContours(canny, cv.RETR_TREE, cv.CHAIN_APPROX_NONE)
@@ -154,24 +82,25 @@ def getFace(frame, verbose=True, update_colours=False):
 
         # likely candidate for piece
         if parent == -1 and area > 750 and area < 4000 and squareness < 210 and len(approx) == 4:
-
-            # add contour to image
-            cv.drawContours(frame, contours, i, (0,255,0), 2)
-           
             # create new cubie object
             cubies.append(Cubie(frame=frame, contour=contour))
 
-
-    ''' # should be able to approximate final cubie
-    if len(cubies) == 3:
-        hidden_centre = inferCubie(frame, centres)
-
-        #cv.circle(output,hidden_centre,5,(0,0,0), 5)
-
-'''
     # group cubies by area to get main face
+    avg = cv.mean(np.array([cv.contourArea(c.contour) for c in cubies]))[0]
+    groups = group_cubes(cubies, avg*0.25)
+    
+    # display groups as different colours
+    if groups is not None:
+        group_colours = [(0,255,0),(255,0,255),(255,255,0),(0,255,255)]
+        groups = sorted(groups, key=lambda x : len(x), reverse=True)
+        #display current groups
+        for i in range(len(groups)):
+            face = [c[0].contour for c in groups[i]]
+            cv.drawContours(frame, face, -1, group_colours[i], 2)
 
-    # won't work for 4 colours anyomore
+        # select main face
+        cubies = [c[0] for c in groups[0]]
+
     if len(cubies) == 4:
         # order colours by contour location 
         centres, colours = order_faces(cubies)
@@ -192,91 +121,109 @@ def getFace(frame, verbose=True, update_colours=False):
         face = [colour_dict[c] for c in colours]
         face = [face[:2], face[2:]]
 
-        return centres, face
-        
-def getState(cube):
+        return [centres, face]
+
+def showRotation(frame, centres):
+
+    rotations = ['r', 'r', 'r', 'd', 'r', 'r'] # face rotations
+    try:
+        move  = rotations[globals.faceNum]
+    except:
+        return
+
+    if move == 'r':
+        cv.arrowedLine(frame, centres[0], centres[1], (255,0,255),6, tipLength = 0.2)
+        cv.arrowedLine(frame, centres[2], centres[3], (255,0,255),6, tipLength = 0.2)
+
+    if move == 'd':
+        cv.arrowedLine(frame, centres[0], centres[2], (255,0,255),6, tipLength = 0.2)
+        cv.arrowedLine(frame, centres[1], centres[3], (255,0,255),6, tipLength = 0.2)
+
+
+def getState(frame):
+    # state complete
+    if globals.faceNum == 6:
+        print('done')
+        print(globals.array)
+        return globals.array
+
     # get colours of displayed face
-    centroids, colours, frame = getFace(cube)
-    #print(side)
+    result = getFace(frame, verbose=False)
+    if result is not None:
+        [centres, face] = result
+    else:
+        return
 
-    #print(centroids)
+    # if face is new face add to state
+    if (globals.array == [] or face != globals.array[-1]) and globals.consistentCount > 10:
+        globals.array.append(face)
+        globals.faceNum +=1
+        print('new face scanned',globals.faceNum)
+        globals.consistentCount = 0
+    
+    # check if face matches last seen face
+    elif face == globals.previousFace and (globals.array == [] or face != globals.array[-1]):
+        globals.consistentCount +=1
+    else:
+        globals.consistentCount = 0
 
-    #update positions of centroids
-    '''objects = ct.update(centroids)
-    #print(objects)
+    if globals.array != [] and face == globals.array[-1]:
+        # give instruction for rotation
+        showRotation(frame, centres)
 
-    # loop over the tracked objects
-    for (objectID, centroid) in objects.items():
-        # draw both the ID of the object and the centroid of the
-        # object on the output frame
-        text = "ID {}".format(objectID)
-        cv.putText(frame, text, (centroid[0] - 10, centroid[1] - 10),
-            cv.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-        cv.circle(frame, (centroid[0], centroid[1]), 4, (0, 255, 0), -1)
-'''
-
-    #pass frame back to main for display
-    return frame, colours
-
-
+    # set current face to previous
+    globals.previousFace = face
+        
 if __name__ == '__main__':
 
-    # set video flag
-    video = True
     update_colours  = False
-    # initilise centroid tracker
-    ct = CentroidTracker()
+    array = []
+    faceNum = 0
+    consistentCount = 0
+    previousFace = None
+
     # colour data file
     f = open("/home/grifaj/Documents/y3project/Rubiks_solver/colour_data.txt", "a")
 
-    if video:
-        frame_rate = 20 # set frame rate
-        prev = 0
-        cap = cv.VideoCapture(0)
-        if not cap.isOpened():
-            print("Cannot open camera")
-            exit()
-        while True:
-            time_elapsed = time.time() - prev
-            ret, frame = cap.read()
+    frame_rate = 20 # set frame rate
+    prev = 0
+    cap = cv.VideoCapture(0)
+    if not cap.isOpened():
+        print("Cannot open camera")
+        exit()
 
-            if not ret:
-                print("Can't receive frame (stream end?). Exiting ...")
-                break
+    while True:
+        time_elapsed = time.time() - prev
+        ret, frame = cap.read()
 
-            if time_elapsed > 1./frame_rate:
-                prev = time.time()
+        if not ret:
+            print("Can't receive frame (stream end?). Exiting ...")
+            break
 
-                ## per frame operations ##
-                #output, colours = getState(frame) bypass get state for now
-                colours = getFace(frame, update_colours=update_colours)
+        if time_elapsed > 1./frame_rate:
+            prev = time.time()
 
-                if update_colours:
-                    if colours is not None:
-                        label  = 'w'
-                        for c in colours:
-                            out = ''
-                            for i in c:
-                                out += str(i)+','
-                            f.write(out+label+'\n')
+            ## per frame operations ##
+            getState(frame)
+            #colours = getFace(frame, update_colours=update_colours, verbose=False)
 
-                # Display the resulting frame
-                showImg('frame',frame)
+            if update_colours:
+                if colours is not None:
+                    label  = 'o'
+                    for c in colours:
+                        out = ''
+                        for i in c:
+                            out += str(i)+','
+                        f.write(out+label+'\n')
 
-            if cv.waitKey(1) == ord('q'):
-                break
-        # When everything done, release the capture
-        cap.release()
-        cv.destroyAllWindows()
-        f.close()
+            # Display the resulting frame
+            cv.imshow('frame',cv.flip(frame, 1))
 
-        cv.waitKey(0)
+        if cv.waitKey(1) == ord('q'):
+            break
+    # When everything done, release the capture
+    cap.release()
+    cv.destroyAllWindows()
+    f.close()
 
-    else: #photo only
-        #cube = cv.imread('C:\\Users\\Alfie\\Documents\\uni_work\\year3\\cs310\\github\Rubiks_solver\\good521.JPG')
-        cube = cv.imread('/home/grifaj/Documents/y3project/Rubiks_solver/test1.jpg')
-
-        output = getFace(cube)
-        showImg('output', output)
-
-        cv.waitKey(0)
+    cv.waitKey(0)

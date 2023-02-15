@@ -1,9 +1,8 @@
 import cv2 as cv
 import numpy as np
 from cubeMini import RubiksCube
-import time
-from stateSolve import CubeSolver
 from faceDetector import getFace
+import globals
 
 # returns the centre of all the centres
 def getCentre(centres):
@@ -102,23 +101,20 @@ def show_exp_move(frame, colours):
 
     return frame
 
-def show_moves(frame, moves):
-    global moveCount
-    global state
-    global solved
+def show_moves(frame):
 
-    try:
-        centres, face = getFace(frame)
-    except:
-        return
-   
-    if moveCount == len(moves):
-        solved = True
+    if globals.moveCount == len(globals.moves):
         print('cube solved')
-        return
+        return True
+
+    result = getFace(frame, verbose=False)
+    if result is not None:
+        [centres, face] = result
+    else:
+        return False
 
     cube = RubiksCube(state=state)
-    move = moves[moveCount]
+    move = globals.moves[moveCount]
 
     # draw move on arrow
     putArrow(frame, move, centres)
@@ -133,71 +129,4 @@ def show_moves(frame, moves):
         state = cube.stringify()
         cube.printCube()
 
-
-# main starting function
-def run(frame):
-    global solver
-    global moves
-    global state
-    global solved
-
-    if state is None:
-        print('set state')
-        # get state from frame
-        #state = get_state(frame)
-        state = 'rwryyowowryrwoyobbgggbgb'
-        cube = RubiksCube(state=state)
-        #print(cube.shuffle(3))
-        cube.printCube()
-        state = cube.stringify()
-        print(state)
-
-    if moves is None:
-
-        cube = RubiksCube(state=state)
-        # get moves from state solve
-        moves = [('l', 'c'), ('u', 'c'), ('u', 'c')]
-        #cost, moves = solver.solve_cube(cube)
-        print(moves)
-
-    if not solved:
-        # output moves on the cube
-        show_moves(frame, moves)
-
-# pre-capture setup
-#solver = CubeSolver()
-moves = None
-state = None
-moveCount = 0
-solved = False
-
-frame_rate = 20 # set frame rate
-prev =0
-cap = cv.VideoCapture(0)
-if not cap.isOpened():
-    print("Cannot open camera")
-    exit()
-while True:
-    time_elapsed = time.time() - prev
-    ret, frame = cap.read()
-
-    if not ret:
-        print("Can't receive frame (stream end?). Exiting ...")
-        break
-
-    if time_elapsed > 1./frame_rate:
-        prev = time.time()
-
-        ## per frame operations ##
-        run(frame)
-
-        # Display the resulting frame
-        cv.imshow('frame',frame)
-
-    if cv.waitKey(1) == ord('q'):
-        break
-# When everything done, release the capture
-cap.release()
-cv.destroyAllWindows()
-
-cv.waitKey(0)
+    return False
