@@ -134,18 +134,22 @@ def showRotation(frame, centres):
     if move == 'r':
         cv.arrowedLine(frame, centres[0], centres[1], (255,0,255),6, tipLength = 0.2)
         cv.arrowedLine(frame, centres[2], centres[3], (255,0,255),6, tipLength = 0.2)
+        if globals.rotateFlag:
+            globals.detectedCube.y_prime()
+            globals.rotateFlag = False
 
     if move == 'd':
         cv.arrowedLine(frame, centres[0], centres[2], (255,0,255),6, tipLength = 0.2)
         cv.arrowedLine(frame, centres[1], centres[3], (255,0,255),6, tipLength = 0.2)
-
+        if globals.rotateFlag:
+            globals.detectedCube.z_prime()
+            globals.rotateFlag = False
 
 def getState(frame):
     # state complete
     if globals.faceNum == 6:
         print('done')
-        print(globals.array)
-        return globals.array
+        return globals.detectedCube.stringify()
 
     # get colours of displayed face
     result = getFace(frame, verbose=False)
@@ -155,19 +159,22 @@ def getState(frame):
         return
 
     # if face is new face add to state
-    if (globals.array == [] or face != globals.array[-1]) and globals.consistentCount > 10:
-        globals.array.append(face)
+    if (globals.lastScan == [] or face != globals.lastScan) and globals.consistentCount > 10:
+        globals.lastScan = face
+        globals.detectedCube.array[0] = face
+        globals.detectedCube.printCube()
         globals.faceNum +=1
+        globals.rotateFlag = True
         print('new face scanned',globals.faceNum)
         globals.consistentCount = 0
     
     # check if face matches last seen face
-    elif face == globals.previousFace and (globals.array == [] or face != globals.array[-1]):
+    elif face == globals.previousFace and (globals.lastScan == [] or face != globals.lastScan):
         globals.consistentCount +=1
     else:
         globals.consistentCount = 0
 
-    if globals.array != [] and face == globals.array[-1]:
+    if globals.lastScan != [] and face == globals.lastScan:
         # give instruction for rotation
         showRotation(frame, centres)
 
@@ -176,7 +183,7 @@ def getState(frame):
         
 if __name__ == '__main__':
 
-    update_colours  = False
+    update_colours  = True
     array = []
     faceNum = 0
     consistentCount = 0
@@ -204,8 +211,7 @@ if __name__ == '__main__':
             prev = time.time()
 
             ## per frame operations ##
-            getState(frame)
-            #colours = getFace(frame, update_colours=update_colours, verbose=False)
+            colours = getFace(frame, update_colours=update_colours, verbose=False)
 
             if update_colours:
                 if colours is not None:

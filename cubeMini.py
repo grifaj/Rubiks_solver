@@ -252,13 +252,13 @@ class RubiksCube:
         # make temp of top
         temp = np.copy(cube[3, :, :])
         # move left to top
-        cube[3, :, :] = np.flip(cube[5, :, 1])
+        cube[3, :, :] = np.rot90(cube[5, :, :],-1)
         # move bottom to left
-        cube[5, :, :] = cube[2, :, :]
+        cube[5, :, :] = np.rot90(cube[2, :, :],-1)
         # move right to bottom
-        cube[2, :, :] = np.flip(cube[4, :, 0])
+        cube[2, :, :] = cube[4, :, :]
         # move top to right
-        cube[4, :, :] = temp
+        cube[4, :, :] = np.rot90(temp, -1)
         # rotate front face clockwise
         cube[0, :, :] = np.rot90(cube[0, :, :],-1)
         # rotate back face anti-clockwise

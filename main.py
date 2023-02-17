@@ -16,7 +16,9 @@ def run(frame):
     # get state from frame
     if state is None:
         state = getState(frame)
-        state = RubiksCube().stringify() # dummy last thing to do
+        '''tmp = RubiksCube()
+        tmp.right_prime()
+        state = tmp.stringify()'''
         globals.state = state
 
     elif moves is None:
@@ -59,10 +61,11 @@ while True:
         prev = time.time()
 
         ## per frame operations ##
+        frame = cv.flip(frame, 1)
         run(frame)
 
         # Display the resulting frame
-        cv.imshow('frame',cv.flip(frame,1))
+        cv.imshow('frame',frame)
 
     if cv.waitKey(1) == ord('q'):
         break

@@ -1,15 +1,21 @@
+from cubeMini import RubiksCube
+
 def init():
     # globals for face detector
     global update_colours
     update_colours  = False
-    global array
-    array = []
     global faceNum
     faceNum = 0
     global consistentCount
     consistentCount = 0
     global previousFace
     previousFace = None
+    global rotateFlag
+    rotateFlag = False
+    global lastScan
+    lastScan = []
+    global detectedCube
+    detectedCube = RubiksCube(state='xxxxxxxxxxxxxxxxxxxxxxxx')
 
     # globals for state solve
     global heuristic

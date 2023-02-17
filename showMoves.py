@@ -54,12 +54,12 @@ def putArrow(frame, move, centres):
         end = centres[0]
     if move[0] == 'r':
         # 2 left hand cubes
-        start = centres[2]
-        end = centres[0]
-    if move[0] == 'l':
-        # 2 right hand cubes
         start = centres[3]
         end = centres[1]
+    if move[0] == 'l':
+        # 2 right hand cubes
+        start = centres[0]
+        end = centres[2]
     if move[0] == 'd':
         # bottom 2 cubes
         start= centres[4]
@@ -77,14 +77,13 @@ def putArrow(frame, move, centres):
         org = (org[0] - 12, org[1] + 10) #ajust centre to take into acont text size
         cv.putText(img=frame, text='F', org=org, fontFace=cv.FONT_HERSHEY_TRIPLEX, fontScale=1.5, color=(255, 0, 255),thickness=3)
 
-
-    # reverse arrow if direction if anti-clockwise
-    if move[1] == 'ac':
-        temp = start
-        start = end
-        end = temp
-
     if move[0] != 'b' and move[0] != 'f':
+
+        # reverse arrow if direction if anti-clockwise
+        if move[1] == 'ac':
+            temp = start
+            start = end
+            end = temp
         cv.arrowedLine(frame, start, end, (255,0,255),6, tipLength = 0.2)
 
 
@@ -113,20 +112,20 @@ def show_moves(frame):
     else:
         return False
 
-    cube = RubiksCube(state=state)
-    move = globals.moves[moveCount]
+    cube = RubiksCube(state=globals.state)
+    move = globals.moves[globals.moveCount]
 
     # draw move on arrow
     putArrow(frame, move, centres)
         
     # check if front face is what is expected then show next move
     cube.move2func(move)
-    show_exp_move(frame, cube.getArray()[1])
-    expected =cube.getArray()[1].tolist() 
+    show_exp_move(frame, cube.getArray()[0])
+    expected =cube.getArray()[0].tolist() 
     if face == expected:
-        moveCount +=1
-        print('move made',moveCount)
-        state = cube.stringify()
+        globals.moveCount +=1
+        print('move made',globals.moveCount)
+        globals.state = cube.stringify()
         cube.printCube()
 
     return False

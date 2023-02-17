@@ -22,7 +22,6 @@ class Cubie:
         if centre is None:
             self.setCentre()
 
-
     def setColour(self):
         # create mask for contour
         grey = cv.cvtColor(self.frame, cv.COLOR_BGR2GRAY)
@@ -35,12 +34,17 @@ class Cubie:
         # calculate mean pixel colour in contour
         mean = cv.mean(lab_img, mask=mask)[:-1]
         hsv = [int(a) for a in mean] # pure colour
-        mean = np.uint8([[mean]])
+        mean = np.uint8([[mean]])[0][0]
+        mean_lum = cv.mean(lab_img)[0]
         
+        mean = mean.tolist()
+        mean.append(mean_lum)
+        hsv.append(int(mean_lum))
+
         #try knn for classifiing colours
         knn = joblib.load('knn.joblib')
         colour_list = [(255,255,255),(20,18,137),(172,72,13),(37,85,255),(76,155,25),(47,213,254)]
-        index = knn.predict(mean[0])[0]
+        index = knn.predict([mean])[0]
 
         self.colour = colour_list[index]
         self.hsvVal = hsv
