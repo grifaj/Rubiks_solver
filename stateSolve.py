@@ -1,7 +1,7 @@
 import numpy as np
 from cubeMini import RubiksCube
 import json
-from tqdm import tqdm 
+#from tqdm import tqdm 
 from queue import Queue
 from threading import Thread, Lock
 import globals
