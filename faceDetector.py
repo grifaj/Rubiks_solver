@@ -67,6 +67,8 @@ def getFace(frame, verbose=True, update_colours=False):
         hierarchies = hierarchies[0]
 
     cubies  = []
+    grey = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
+    blank = np.zeros(grey.shape, np.uint8) 
     # select candidates for cubies
     for i in range(len(contours)):
         contour = contours[i]
@@ -84,6 +86,11 @@ def getFace(frame, verbose=True, update_colours=False):
         if parent == -1 and area > 750 and area < 4000 and squareness < 210 and len(approx) == 4:
             # create new cubie object
             cubies.append(Cubie(frame=frame, contour=contour))
+        
+        # display unused contours
+    
+    cv.drawContours(blank, contours, -1, (0,255,0), 2)
+    cv.imshow('contours', blank)
 
     # group cubies by area to get main face
     avg = cv.mean(np.array([cv.contourArea(c.contour) for c in cubies]))[0]
@@ -183,7 +190,7 @@ def getState(frame):
         
 if __name__ == '__main__':
 
-    update_colours  = True
+    update_colours  = False
     array = []
     faceNum = 0
     consistentCount = 0
@@ -199,9 +206,13 @@ if __name__ == '__main__':
         print("Cannot open camera")
         exit()
 
+    index = 0
+    prev_colour_time = 0
     while True:
         time_elapsed = time.time() - prev
         ret, frame = cap.read()
+
+        colour_time_elapsed = time.time() - prev_colour_time
 
         if not ret:
             print("Can't receive frame (stream end?). Exiting ...")
@@ -213,17 +224,31 @@ if __name__ == '__main__':
             ## per frame operations ##
             colours = getFace(frame, update_colours=update_colours, verbose=False)
 
+            colours_labels = ['w','r','b','o','g','y']
+            scan_time = 10
             if update_colours:
+                if colour_time_elapsed > scan_time:
+                    print('changing to label', colours_labels[index])
+                    prev_colour_time = time.time()
+                    label = colours_labels[index]
+                    index+=1
+
+                text = str(int(scan_time - colour_time_elapsed))
+                cv.putText(img=frame, text=text, org=(150, 80), fontFace=cv.FONT_HERSHEY_TRIPLEX, fontScale=3, color=(0, 255, 0),thickness=3)
+                cv.putText(img=frame, text=colours_labels[index-1], org=(50, 80), fontFace=cv.FONT_HERSHEY_TRIPLEX, fontScale=3, color=(0, 255, 0),thickness=3)
                 if colours is not None:
-                    label  = 'o'
                     for c in colours:
                         out = ''
                         for i in c:
                             out += str(i)+','
                         f.write(out+label+'\n')
 
+                if index > 5:
+                    print('ending stream')
+                    break
+
             # Display the resulting frame
-            cv.imshow('frame',cv.flip(frame, 1))
+            cv.imshow('frame',frame)
 
         if cv.waitKey(1) == ord('q'):
             break

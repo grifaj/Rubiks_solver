@@ -125,16 +125,3 @@ def worker(que, max_moves, heuristic, pbar, lock):
                 que.put((a_str, d+1))
                 pbar.update(1)
 
-
-######################## main ##################################
-
-
-'''build_heuristic_db()
-print('data dumped')'''
-
-
-'''# load heuristic data
-global heuristic_data
-with open('heuristic.json') as f:
-    heuristic_data = json.load(f)
-print('data loaded')'''
