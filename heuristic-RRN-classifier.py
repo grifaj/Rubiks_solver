@@ -52,12 +52,3 @@ model.fit(X_train, y_train, epochs=10, batch_size=32, validation_split=0.1)
 loss, accuracy = model.evaluate(X_test, y_test)
 print('Test accuracy:', accuracy)
 
-# Use the model to predict the label of a new string
-def predict_label(model, string):
-    X = np.zeros((1, MAX_LENGTH), dtype=int)
-    for i, c in enumerate(string[:MAX_LENGTH]):
-        X[0, i] = ord(c)
-    X = np.eye(NUM_CHARS)[X]
-    y_pred = model.predict(X)[0]
-    label = np.argmax(y_pred)
-    return label
