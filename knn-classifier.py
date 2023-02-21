@@ -12,10 +12,7 @@ filename = 'C:\\Users\Alfie\\Documents\\uni_work\\year3\\cs310\\github\\Rubiks_s
 dataset = np.genfromtxt(filename, delimiter=',', dtype=str)
 X = [list(map(int, sample)) for sample in dataset[:,:-1]]
 y = [labels.index(sample) for sample in dataset[:, -1]]
-
-# choose 2 features
 X = np.array(X)
-X = X[:, [1,2]]
 
 # split the data into training and testing sets
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
@@ -37,8 +34,8 @@ print("Accuracy:", accuracy)
 x_min, x_max = X[:, 0].min() - 1, X[:, 0].max() + 1
 y_min, y_max = X[:, 1].min() - 1, X[:, 1].max() + 1
 
-xx, yy = np.meshgrid(np.arange(x_min, x_max, 0.1),
-                     np.arange(y_min, y_max, 0.1))
+xx, yy = np.meshgrid(np.arange(x_min, x_max, 0.6),
+                     np.arange(y_min, y_max, 0.6))
 
 # predict the class labels for each point in the meshgrid
 Z = knn.predict(np.c_[xx.ravel(), yy.ravel()])

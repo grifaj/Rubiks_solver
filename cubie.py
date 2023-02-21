@@ -32,14 +32,10 @@ class Cubie:
         lab_img = cv.cvtColor(self.frame, cv.COLOR_BGR2LAB)
 
         # calculate mean pixel colour in contour
-        mean = cv.mean(lab_img, mask=mask)[:-1]
+        mean = cv.mean(lab_img, mask=mask)[1:-1]
         hsv = [int(a) for a in mean] # pure colour
         mean = np.uint8([[mean]])[0][0]
-        mean_lum = cv.mean(lab_img)[0]
-        
         mean = mean.tolist()
-        mean.append(mean_lum)
-        hsv.append(int(mean_lum))
 
         #try knn for classifiing colours
         knn = joblib.load('knn.joblib')
