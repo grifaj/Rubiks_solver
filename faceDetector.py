@@ -67,8 +67,7 @@ def getFace(frame, verbose=True, update_colours=False):
         hierarchies = hierarchies[0]
 
     cubies  = []
-    grey = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
-    blank = np.zeros(grey.shape, np.uint8) 
+    blank = np.zeros(frame.shape, dtype='uint8')
     # select candidates for cubies
     for i in range(len(contours)):
         contour = contours[i]
@@ -88,9 +87,10 @@ def getFace(frame, verbose=True, update_colours=False):
             cubies.append(Cubie(frame=frame, contour=contour))
         
         # display unused contours
-    
-    cv.drawContours(blank, contours, -1, (0,255,0), 2)
-    cv.imshow('contours', blank)
+        elif parent == -1:
+            cv.drawContours(blank, contours=contours, contourIdx=i, color=(0, 255, 0), thickness=2)
+
+        if verbose: cv.imshow('Contours', blank)
 
     # group cubies by area to get main face
     avg = cv.mean(np.array([cv.contourArea(c.contour) for c in cubies]))[0]
@@ -130,6 +130,7 @@ def getFace(frame, verbose=True, update_colours=False):
 
         return [centres, face]
 
+# rotate virtual cube to line up with real cube
 def showRotation(frame, centres):
 
     rotations = ['r', 'r', 'r', 'd', 'r', 'r'] # face rotations
@@ -190,7 +191,7 @@ def getState(frame):
         
 if __name__ == '__main__':
 
-    update_colours  = False
+    update_colours  = True
     array = []
     faceNum = 0
     consistentCount = 0

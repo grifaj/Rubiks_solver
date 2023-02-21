@@ -64,21 +64,18 @@ def putArrow(frame, move, centres):
         # bottom 2 cubes
         start= centres[4]
         end = centres[3]
-
     if move[0] == 'b':
-        # special arrow for back
-        draw_arc(frame, centres, move[1])
+        #shouldn't use back
+        print('illegal move')
+        return
     if move[0] == 'f':
-        # might have to rotate the cube, use 2 moves
-        # for now draw arc anf but big F on it
-        dir = 'c' if move[1] == 'ac' else 'ac' # swap direction
+        dir = 'c' if move[1] == 'ac' else 'ac'
         draw_arc(frame, centres, dir)
-        org = getCentre(centres)
-        org = (org[0] - 12, org[1] + 10) #ajust centre to take into acont text size
-        cv.putText(img=frame, text='F', org=org, fontFace=cv.FONT_HERSHEY_TRIPLEX, fontScale=1.5, color=(255, 0, 255),thickness=3)
+    if move[0] == 'y':
+        cv.arrowedLine(frame, centres[1], centres[0], (255,0,255),6, tipLength = 0.2)
+        cv.arrowedLine(frame, centres[3], centres[2], (255,0,255),6, tipLength = 0.2)
 
-    if move[0] != 'b' and move[0] != 'f':
-
+    if move[0] != 'f' and move[0] != 'y':
         # reverse arrow if direction if anti-clockwise
         if move[1] == 'ac':
             temp = start
@@ -90,12 +87,10 @@ def putArrow(frame, move, centres):
 def show_exp_move(frame, colours):
     colour_dict = {'w':(255,255,255), 'r':(20,18,137), 'b':(172,72,13), 'o':(37,85,255), 'g':(76,155,25), 'y':(47,213,254)}
 
-    colours = colours.tolist()
     side_len = 50
     w = frame.shape[1] - side_len*2
     for i in range(len(colours)):
         for j in range(len(colours[0])):
-            #cv.rectangle(frame, (width-(2-i)*side_len,j*side_len),(width-(2-i)*side_len,j*side_len), colour_dict[colours[i][j]],-1)
             cv.rectangle(frame, (i*side_len+w,j*side_len),((i+1)*side_len+w,(j+1)*side_len), colour_dict[colours[j][i]],-1)
 
     return frame
@@ -117,15 +112,17 @@ def show_moves(frame):
 
     # draw move on arrow
     putArrow(frame, move, centres)
-        
+    
     # check if front face is what is expected then show next move
     cube.move2func(move)
-    show_exp_move(frame, cube.getArray()[0])
-    expected =cube.getArray()[0].tolist() 
+    expected =cube.getArray()[0]
+    if type(expected) != list:
+            expected = expected.tolist()
+    show_exp_move(frame, expected)
     if face == expected:
         globals.moveCount +=1
         print('move made',globals.moveCount)
         globals.state = cube.stringify()
-        cube.printCube()
+        #cube.printCube()
 
     return False
