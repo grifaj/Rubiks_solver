@@ -7,8 +7,8 @@ import matplotlib.pyplot as plt
 
 # load your data
 labels = ['w', 'r', 'b', 'o', 'g', 'y']
-#filename = '/home/grifaj/Documents/y3project/Rubiks_solver/colour_data.txt'
-filename = 'C:\\Users\Alfie\\Documents\\uni_work\\year3\\cs310\\github\\Rubiks_solver\\colour_data.txt'
+filename = '/home/grifaj/Documents/y3project/Rubiks_solver/colour_data.txt'
+#filename = 'C:\\Users\Alfie\\Documents\\uni_work\\year3\\cs310\\github\\Rubiks_solver\\colour_data.txt'
 dataset = np.genfromtxt(filename, delimiter=',', dtype=str)
 X = [list(map(int, sample)) for sample in dataset[:,:-1]]
 y = [labels.index(sample) for sample in dataset[:, -1]]

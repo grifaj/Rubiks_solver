@@ -87,7 +87,7 @@ def getFace(frame, verbose=True, update_colours=False):
             cubies.append(Cubie(frame=frame, contour=contour))
         
         # display unused contours
-        elif parent == -1:
+        elif parent == -1 and verbose:
             cv.drawContours(blank, contours=contours, contourIdx=i, color=(0, 255, 0), thickness=2)
 
         if verbose: cv.imshow('Contours', blank)
