@@ -1,6 +1,6 @@
 import tensorflow as tf
 from tensorflow.keras.models import load_model
-from cubeMini import RubiksCube
+from Rubiks_solver.cube import RubiksCube
 import stateSolve
 import globals
 import numpy as np

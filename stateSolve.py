@@ -1,5 +1,5 @@
 import numpy as np
-from cubeMini import RubiksCube
+from cube import RubiksCube
 import json
 from tqdm import tqdm 
 from queue import Queue

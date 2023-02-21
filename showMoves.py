@@ -1,6 +1,6 @@
 import cv2 as cv
 import numpy as np
-from cubeMini import RubiksCube
+from cube import RubiksCube
 from faceDetector import getFace
 import globals
 

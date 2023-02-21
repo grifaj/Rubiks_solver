@@ -1,4 +1,4 @@
-from cubeMini import RubiksCube
+from cube import RubiksCube
 import json
 
 def init():
@@ -17,7 +17,7 @@ def init():
     global lastScan
     lastScan = []
     global detectedCube
-    detectedCube = RubiksCube(state='xxxxxxxxxxxxxxxxxxxxxxxx')
+    detectedCube = RubiksCube(state='xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx')
 
     # globals for state solve
     global heuristic

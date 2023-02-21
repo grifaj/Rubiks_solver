@@ -34,15 +34,17 @@ def order_faces(cubies):
 
     #order by y, gives top and bottom row
     combined = sorted(combined, key=lambda x: x[0][1])
-    top = combined[:2]
-    bottom = combined[2:]
+    top = combined[:3]
+    middle = combined[3:6]
+    bottom = combined[6:]
 
     #order top and bottom by x value to give left and right
     top = sorted(top, key=lambda x: x[0][0])
+    middle = sorted(middle, key=lambda x: x[0][0])
     bottom = sorted(bottom, key=lambda x: x[0][0])
 
     #combine to give full sorted list
-    new_order = top + bottom
+    new_order = top + middle + bottom
 
     # seperate colours out in new order
     [centres, colours] = map(list, zip(*new_order))
@@ -87,7 +89,7 @@ def getFace(frame, verbose=True, update_colours=False):
             cubies.append(Cubie(frame=frame, contour=contour))
         
         # display unused contours
-        elif parent == -1:
+        elif parent == -1 and verbose:
             cv.drawContours(blank, contours=contours, contourIdx=i, color=(0, 255, 0), thickness=2)
 
         if verbose: cv.imshow('Contours', blank)
@@ -108,13 +110,13 @@ def getFace(frame, verbose=True, update_colours=False):
         # select main face
         cubies = [c[0] for c in groups[0]]
 
-    if len(cubies) == 4:
+    if len(cubies) == 9:
         # order colours by contour location 
         centres, colours = order_faces(cubies)
 
         #create box in corner for colours
         side_len = 50
-        pos = [[0,2],[1,3]]
+        pos = [[0,1,2],[3,4,5],[6,7,8]]
         for i in range(len(pos)):
             for j in range(len(pos[i])):
                 cv.rectangle(frame, (i*side_len,j*side_len),((i+1)*side_len,(j+1)*side_len), colours[pos[i][j]],-1)
@@ -126,7 +128,7 @@ def getFace(frame, verbose=True, update_colours=False):
         # return face in the form of an array
         colour_dict = {(255,255,255):'w', (20,18,137):'r', (172,72,13):'b', (37,85,255):'o', (76,155,25):'g', (47,213,254):'y'}
         face = [colour_dict[c] for c in colours]
-        face = [face[:2], face[2:]]
+        face = [face[:3], face[3:6],face[6:]]
 
         return [centres, face]
 
@@ -140,8 +142,9 @@ def showRotation(frame, centres):
         return
 
     if move == 'r':
-        cv.arrowedLine(frame, centres[0], centres[1], (255,0,255),6, tipLength = 0.2)
-        cv.arrowedLine(frame, centres[2], centres[3], (255,0,255),6, tipLength = 0.2)
+        cv.arrowedLine(frame, centres[0], centres[2], (255,0,255),6, tipLength = 0.2)
+        cv.arrowedLine(frame, centres[3], centres[5], (255,0,255),6, tipLength = 0.2)
+        cv.arrowedLine(frame, centres[6], centres[8], (255,0,255),6, tipLength = 0.2)
         if globals.rotateFlag:
             globals.detectedCube.y_prime()
             globals.rotateFlag = False

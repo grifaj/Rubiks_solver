@@ -1,6 +1,6 @@
 import cv2 as cv
 import numpy as np
-from cubeMini import RubiksCube
+from cube import RubiksCube
 import time
 from stateSolve import solve_cube
 from faceDetector import getState
