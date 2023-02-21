@@ -191,7 +191,7 @@ def getState(frame):
         
 if __name__ == '__main__':
 
-    update_colours  = True
+    update_colours  = False
     array = []
     faceNum = 0
     consistentCount = 0
@@ -223,7 +223,7 @@ if __name__ == '__main__':
             prev = time.time()
 
             ## per frame operations ##
-            colours = getFace(frame, update_colours=update_colours, verbose=False)
+            colours = getFace(frame, update_colours=update_colours, verbose=True)
 
             colours_labels = ['w','r','b','o','g','y']
             scan_time = 10

@@ -1,6 +1,8 @@
 from cubeMini import RubiksCube
+import json
 
 def init():
+    print('being used')
     # globals for face detector
     global update_colours
     update_colours  = False
@@ -19,7 +21,9 @@ def init():
 
     # globals for state solve
     global heuristic
-    heuristic = None
+    path = '/home/grifaj/Documents/y3project/Rubiks_solver/'
+    with open(path+'heuristic.json') as f:
+        heuristic = json.load(f)
 
     # globals for show moves
     global moves
@@ -28,3 +32,6 @@ def init():
     state = None
     global moveCount
     moveCount = 0
+
+    if __name__ == '__main__':
+        init()

@@ -5,6 +5,7 @@ import time
 from stateSolve import solve_cube
 from faceDetector import getState
 from showMoves import show_moves
+import subprocess
 import globals
 
 def checkFront(moves, cube):
@@ -71,6 +72,10 @@ cap = cv.VideoCapture(0)
 if not cap.isOpened():
     print("Cannot open camera")
     exit()
+
+#cv.namedWindow('frame', cv.WND_PROP_FULLSCREEN)
+#cv.setWindowProperty('frame', cv.WND_PROP_FULLSCREEN, cv.WINDOW_FULLSCREEN)
+
 while True:
     time_elapsed = time.time() - prev
     ret, frame = cap.read()
