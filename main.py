@@ -2,7 +2,7 @@ import cv2 as cv
 import numpy as np
 from cube import RubiksCube
 import time
-from stateSolve import solve_cube
+from stateSolve import solve_cube, solve_cube_kociemba
 from faceDetector import getState
 from showMoves import show_moves
 import subprocess
@@ -47,7 +47,8 @@ def run(frame):
 
         # get moves from state solve
         print('loading solved')
-        moves = solve_cube(cube)
+        #moves = solve_cube(cube)
+        moves = solve_cube_kociemba(cube)
 
         # add rotation if front move is unchanging
         moves = checkFront(moves, cube)

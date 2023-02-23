@@ -5,7 +5,7 @@ from tqdm import tqdm
 from queue import Queue
 from threading import Thread, Lock
 import globals
-   
+import kociemba   
 
 def colour_independant(state):
     num = 0
@@ -75,14 +75,58 @@ def solve_cube(cube):
         if status: return path
         bound = cost
         
+def convertBack(string):
+    faces = [[],[],[],[],[],[]]
+    order = [3,4,0,2,5,1]
+    for i in range(6):
+        face = string[i*9:(i+1)*9]
+        out_face = []
+        for j in range(3):
+            row = face[j*3:(j+1)*3]
+            out_face.append(list(row))
+        faces[order[i]] = out_face
+
+    cube = RubiksCube(array=faces)
+    cube.printCube()
+
+def solve_cube_kociemba(cube):
+    # get colour mapping
+    symbols =['F','B','D','U','R','L'] 
+    colours = []
+    for i in range(6):
+        colours.append(cube.array[i][1][1])
+
+    cube_string = ''
+    order = [3,4,0,2,5,1]
+    for i in order:
+        for j in range(3):
+            for k in range(3):
+                cube_string += symbols[colours.index(cube.array[i][j][k])]
+    
+    #convertBack(cube_string)
+
+    solved = kociemba.solve(cube_string)
+
+    # convert soln back to my notation
+    out = []
+    solved = solved.split(' ')
+    for move in solved:
+        direction = 'c' if (len(move) == 1 or move[1] == '2') else 'ac'
+        m = (move[0].lower(), direction)
+        out.append(m)
+        if move[-1] == '2':
+            out.append(m)
+
+    return out       
 
 # database building code hoplefuly no longer needed
 def build_heuristic_db():
-    max_moves  = 13
+    max_moves  = 10
     cube = RubiksCube()
     state = cube.stringify()
     heuristic = {colour_independant(state): 0}
-    total = [0, 6, 27, 120, 534, 2256, 8969, 33058, 114149, 360508, 930588, 1350852, 782536, 90280, 276]
+    #total = [0, 6, 27, 120, 534, 2256, 8969, 33058, 114149, 360508, 930588, 1350852, 782536, 90280, 276]
+    total = [18, 243, 3240, 43254, 577368, 7706988, 102876480, 1373243544, 18330699168, 244686773808, 3266193870720, 43598688377184, 581975750199168, 7768485393179328, 103697388221736960, 1384201395738071424, 18476969736848122368, 246639261965462754048]
     pbar = tqdm(total=sum(total[:max_moves+1]))
 
     # create queue
@@ -125,3 +169,9 @@ def worker(que, max_moves, heuristic, pbar, lock):
                 que.put((a_str, d+1))
                 pbar.update(1)
 
+if __name__ == '__main__':
+    cube = RubiksCube()
+    print(cube.shuffle(15))
+    cube.printCube()
+    solve_cube_kociemba(cube)
+    #build_heuristic_db()
