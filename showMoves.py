@@ -23,7 +23,7 @@ def draw_triangle(img, centre, side_length):
 # very messy code to draw circular arrows on the face
 def draw_arc(frame, centres, dir):
     # Ellipse parameters
-    radius = int(np.abs(centres[0][0] - centres[1][0])/1.5)
+    radius = int(np.abs(centres[0][0] - centres[2][0])/1.5)
     centre = getCentre(centres)
 
     # angles top and bottom
@@ -50,20 +50,20 @@ def draw_arc(frame, centres, dir):
 def putArrow(frame, move, centres):
     if move[0] == 'u':
         # draw arrow on top 2 cubes
-        start = centres[1]
+        start = centres[2]
         end = centres[0]
     if move[0] == 'r':
         # 2 left hand cubes
-        start = centres[3]
-        end = centres[1]
+        start = centres[8]
+        end = centres[2]
     if move[0] == 'l':
         # 2 right hand cubes
         start = centres[0]
-        end = centres[2]
+        end = centres[6]
     if move[0] == 'd':
         # bottom 2 cubes
-        start= centres[4]
-        end = centres[3]
+        start= centres[8]
+        end = centres[6]
     if move[0] == 'b':
         #shouldn't use back
         print('illegal move')
