@@ -63,10 +63,10 @@ def ida_star( state, g, bound, path):
 
 def solve_cube(cube):
     # check heuristic is loaded
-    if globals.heuristic is None:
+    '''if globals.heuristic is None:
         path = '/home/grifaj/Documents/y3project/Rubiks_solver/'
         with open(path+'heuristic.json') as f:
-            globals.heuristic = json.load(f)
+            globals.heuristic = json.load(f)'''
 
     path = [] 
     bound = getHeuristic(cube)

@@ -62,8 +62,8 @@ def putArrow(frame, move, centres):
         end = centres[6]
     if move[0] == 'd':
         # bottom 2 cubes
-        start= centres[8]
-        end = centres[6]
+        start= centres[6]
+        end = centres[8]
     if move[0] == 'b':
         #shouldn't use back
         print('illegal move')
@@ -72,8 +72,10 @@ def putArrow(frame, move, centres):
         dir = 'c' if move[1] == 'ac' else 'ac'
         draw_arc(frame, centres, dir)
     if move[0] == 'y':
-        cv.arrowedLine(frame, centres[1], centres[0], (255,0,255),6, tipLength = 0.2)
-        cv.arrowedLine(frame, centres[3], centres[2], (255,0,255),6, tipLength = 0.2)
+        cv.arrowedLine(frame, centres[2], centres[0], (255,0,255),6, tipLength = 0.2)
+        cv.arrowedLine(frame, centres[5], centres[3], (255,0,255),6, tipLength = 0.2)
+        cv.arrowedLine(frame, centres[8], centres[6], (255,0,255),6, tipLength = 0.2)
+
 
     if move[0] != 'f' and move[0] != 'y':
         # reverse arrow if direction if anti-clockwise
@@ -88,7 +90,7 @@ def show_exp_move(frame, colours):
     colour_dict = {'w':(255,255,255), 'r':(20,18,137), 'b':(172,72,13), 'o':(37,85,255), 'g':(76,155,25), 'y':(47,213,254)}
 
     side_len = 50
-    w = frame.shape[1] - side_len*2
+    w = frame.shape[1] - side_len*3
     for i in range(len(colours)):
         for j in range(len(colours[0])):
             cv.rectangle(frame, (i*side_len+w,j*side_len),((i+1)*side_len+w,(j+1)*side_len), colour_dict[colours[j][i]],-1)
@@ -102,16 +104,9 @@ def show_moves(frame):
         return True
 
     result = getFace(frame, verbose=False)
-    if result is not None:
-        [centres, face] = result
-    else:
-        return False
 
     cube = RubiksCube(state=globals.state)
     move = globals.moves[globals.moveCount]
-
-    # draw move on arrow
-    putArrow(frame, move, centres)
     
     # check if front face is what is expected then show next move
     cube.move2func(move)
@@ -119,6 +114,16 @@ def show_moves(frame):
     if type(expected) != list:
             expected = expected.tolist()
     show_exp_move(frame, expected)
+
+    # check face was returned
+    if result is not None:
+        [centres, face] = result
+    else:
+        return False
+
+     # draw move on arrow
+    putArrow(frame, move, centres)
+
     if face == expected:
         globals.moveCount +=1
         print('move made',globals.moveCount)

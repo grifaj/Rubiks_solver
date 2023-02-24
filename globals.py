@@ -20,10 +20,10 @@ def init():
     detectedCube = RubiksCube(state='xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx')
 
     # globals for state solve
-    global heuristic
+    '''global heuristic
     path = '/home/grifaj/Documents/y3project/Rubiks_solver/'
     with open(path+'heuristic.json') as f:
-        heuristic = json.load(f)
+        heuristic = json.load(f)'''
 
     # globals for show moves
     global moves

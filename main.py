@@ -5,26 +5,30 @@ import time
 from stateSolve import solve_cube, solve_cube_kociemba
 from faceDetector import getState
 from showMoves import show_moves
-import subprocess
 import globals
 
 def checkFront(moves, cube):
     new_moves  = []
+    index = 0
     for move in moves:     
         prev =cube.getArray()[0]
         if type(prev) != list:
             prev = prev.tolist()
         cube.move2func(move)
         expected =cube.getArray()[0].tolist()
-        if prev == expected:
+        if prev == expected and move[0] in ['f', 'b']:
             # add y rotation
             new_moves.append(('y', 'c'))
+            f = 'l' if move[0] == 'f' else 'r'
             if move[1] == 'c':
                 new_moves.append(('l', 'c'))
             else:
                 new_moves.append(('l', 'ac'))
+            # recalcuate rest of the moves
+            new_moves = new_moves + solve_cube_kociemba(cube)
         else:
             new_moves.append(move)
+        index +=1
     
     return new_moves
 

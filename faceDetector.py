@@ -57,7 +57,7 @@ def getFace(frame, verbose=True, update_colours=False):
     # blur and get edges from frame
     blur = cv.blur(frame,(3,3))
     canny = cv.Canny(blur, 55, 100, L2gradient = True) #60, 100
-
+    
     if verbose: cv.imshow('edges',canny)
 
     # get contours
@@ -84,7 +84,7 @@ def getFace(frame, verbose=True, update_colours=False):
         approx = cv.approxPolyDP(contour, epsilon, True)
 
         # likely candidate for piece
-        if parent == -1 and area > 750 and area < 4000 and squareness < 210 and len(approx) == 4:
+        if parent == -1 and area > 500 and area < 4000 and squareness < 210:
             # create new cubie object
             cubies.append(Cubie(frame=frame, contour=contour))
         
@@ -119,7 +119,7 @@ def getFace(frame, verbose=True, update_colours=False):
         pos = [[0,1,2],[3,4,5],[6,7,8]]
         for i in range(len(pos)):
             for j in range(len(pos[i])):
-                cv.rectangle(frame, (i*side_len,j*side_len),((i+1)*side_len,(j+1)*side_len), colours[pos[i][j]],-1)
+                cv.rectangle(frame, (i*side_len,j*side_len),((i+1)*side_len,(j+1)*side_len), colours[pos[j][i]],-1)
 
         # if updating colours 
         if update_colours:
@@ -150,8 +150,9 @@ def showRotation(frame, centres):
             globals.rotateFlag = False
 
     if move == 'd':
-        cv.arrowedLine(frame, centres[0], centres[2], (255,0,255),6, tipLength = 0.2)
-        cv.arrowedLine(frame, centres[1], centres[3], (255,0,255),6, tipLength = 0.2)
+        cv.arrowedLine(frame, centres[0], centres[6], (255,0,255),6, tipLength = 0.2)
+        cv.arrowedLine(frame, centres[1], centres[7], (255,0,255),6, tipLength = 0.2)
+        cv.arrowedLine(frame, centres[2], centres[8], (255,0,255),6, tipLength = 0.2)
         if globals.rotateFlag:
             globals.detectedCube.z_prime()
             globals.rotateFlag = False
@@ -170,7 +171,7 @@ def getState(frame):
         return
 
     # if face is new face add to state
-    if (globals.lastScan == [] or face != globals.lastScan) and globals.consistentCount > 10:
+    if (globals.lastScan == [] or face != globals.lastScan) and globals.consistentCount > 5:
         globals.lastScan = face
         globals.detectedCube.array[0] = face
         globals.detectedCube.printCube()
