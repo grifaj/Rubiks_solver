@@ -34,8 +34,9 @@ print("Accuracy:", accuracy)
 x_min, x_max = X[:, 0].min() - 1, X[:, 0].max() + 1
 y_min, y_max = X[:, 1].min() - 1, X[:, 1].max() + 1
 
-xx, yy = np.meshgrid(np.arange(x_min, x_max, 0.6),
-                     np.arange(y_min, y_max, 0.6))
+interval = 0.6
+xx, yy = np.meshgrid(np.arange(x_min, x_max, interval),
+                     np.arange(y_min, y_max, interval))
 
 # predict the class labels for each point in the meshgrid
 Z = knn.predict(np.c_[xx.ravel(), yy.ravel()])

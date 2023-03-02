@@ -3,18 +3,21 @@ import numpy as np
 import time
 from cubie import Cubie
 import globals
+import math as maths
 
 # groups faces based on closness of anlges to each other
 def group_cubes(cubies, threshold):
     if len(cubies) > 0:
         areas = [cv.contourArea(c.contour) for c in cubies]
+        max_dist = (np.max([cv.arcLength(c.contour,True) for c in cubies])/4)*maths.sqrt(2)*1.5 #diagonal across
 
         groups = []
         combined = list(zip(cubies, areas))
         combined = sorted(combined, key=lambda x: x[1])
         current_group = [combined[0]]
         for i in range(1, len(combined)):
-            if abs(combined[i][1] - current_group[-1][1]) <= threshold:
+            # if areas are similar enough and group is not more than 3 and are close enough
+            if abs(combined[i][1] - current_group[-1][1]) <= threshold  and len(current_group) <=3 and maths.dist(combined[i][0].centre, current_group[-1][0].centre) <= max_dist:
                 current_group.append(combined[i])
             else:
                 groups.append(current_group)
@@ -54,7 +57,7 @@ def getFace(frame, verbose=True, update_colours=False):
     
     # blur and get edges from frame
     blur = cv.blur(frame,(3,3))
-    canny = cv.Canny(blur, 55, 100, L2gradient = True) #60, 100
+    canny = cv.Canny(blur, 50, 60, L2gradient = True) #55, 100
 
     if verbose: cv.imshow('edges',canny)
 
@@ -78,19 +81,15 @@ def getFace(frame, verbose=True, update_colours=False):
         perimeter = cv.arcLength(contour, True)
         squareness = cv.norm(((perimeter / 4) * (perimeter / 4)) - area)
 
-        epsilon = 0.04 * perimeter
-        approx = cv.approxPolyDP(contour, epsilon, True)
-
         # likely candidate for piece
-        if parent == -1 and area > 750 and area < 4000 and squareness < 210 and len(approx) == 4:
+        if parent == -1 and area > 750 and area < 6000 and squareness < 210:
             # create new cubie object
             cubies.append(Cubie(frame=frame, contour=contour))
         
-        # display unused contours
-        elif parent == -1 and verbose:
+        #draw contours
+        if verbose: 
             cv.drawContours(blank, contours=contours, contourIdx=i, color=(0, 255, 0), thickness=2)
-
-        if verbose: cv.imshow('Contours', blank)
+            cv.imshow('Contours', blank)
 
     # group cubies by area to get main face
     avg = cv.mean(np.array([cv.contourArea(c.contour) for c in cubies]))[0]
@@ -114,6 +113,8 @@ def getFace(frame, verbose=True, update_colours=False):
 
         #create box in corner for colours
         side_len = 50
+        cv.putText(img=frame, text='Detected', org=(5, 125), fontFace=cv.FONT_HERSHEY_TRIPLEX, fontScale=0.7, color=(0, 255, 0),thickness=1)
+        cv.putText(img=frame, text='face', org=(30, 145), fontFace=cv.FONT_HERSHEY_TRIPLEX, fontScale=0.7, color=(0, 255, 0),thickness=1)
         pos = [[0,2],[1,3]]
         for i in range(len(pos)):
             for j in range(len(pos[i])):
@@ -192,6 +193,7 @@ def getState(frame):
 if __name__ == '__main__':
 
     update_colours  = False
+    verbose = False
     array = []
     faceNum = 0
     consistentCount = 0
@@ -223,16 +225,20 @@ if __name__ == '__main__':
             prev = time.time()
 
             ## per frame operations ##
-            colours = getFace(frame, update_colours=update_colours, verbose=True)
+            colours = getFace(frame, update_colours=update_colours, verbose=verbose)
 
             colours_labels = ['w','r','b','o','g','y']
             scan_time = 10
             if update_colours:
                 if colour_time_elapsed > scan_time:
-                    print('changing to label', colours_labels[index])
-                    prev_colour_time = time.time()
-                    label = colours_labels[index]
-                    index+=1
+                    try:
+                        print('changing to label', colours_labels[index])
+                        prev_colour_time = time.time()
+                        label = colours_labels[index]
+                        index+=1
+                    except:
+                        print('ending stream')
+                        break
 
                 text = str(int(scan_time - colour_time_elapsed))
                 cv.putText(img=frame, text=text, org=(150, 80), fontFace=cv.FONT_HERSHEY_TRIPLEX, fontScale=3, color=(0, 255, 0),thickness=3)
@@ -243,10 +249,6 @@ if __name__ == '__main__':
                         for i in c:
                             out += str(i)+','
                         f.write(out+label+'\n')
-
-                if index > 5:
-                    print('ending stream')
-                    break
 
             # Display the resulting frame
             cv.imshow('frame',frame)

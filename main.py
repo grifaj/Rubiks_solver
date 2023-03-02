@@ -5,7 +5,6 @@ import time
 from stateSolve import solve_cube
 from faceDetector import getState
 from showMoves import show_moves
-import subprocess
 import globals
 
 def checkFront(moves, cube):
@@ -17,12 +16,10 @@ def checkFront(moves, cube):
         cube.move2func(move)
         expected =cube.getArray()[0].tolist()
         if prev == expected:
-            # add y rotation
-            new_moves.append(('y', 'c'))
-            if move[1] == 'c':
-                new_moves.append(('l', 'c'))
-            else:
-                new_moves.append(('l', 'ac'))
+            #check not part of f2 move
+            if new_moves[-2][1] != 'y':
+                new_moves.append(('y', 'c'))
+            new_moves.append(('l', move[1]))
         else:
             new_moves.append(move)
     
@@ -58,10 +55,15 @@ def run(frame):
     elif not solved:
         # output moves on the cube
         solved = show_moves(frame)
+    
+    else:
+        cv.putText(img=frame, text='Cube solved', org=(100, 150), fontFace=cv.FONT_HERSHEY_TRIPLEX, fontScale=2, color=(0, 255, 0),thickness=2)
+
 
 state = None
 moves = None
 solved = False
+record = False
 
 # intit globals
 globals.init()
@@ -73,8 +75,14 @@ if not cap.isOpened():
     print("Cannot open camera")
     exit()
 
-#cv.namedWindow('frame', cv.WND_PROP_FULLSCREEN)
-#cv.setWindowProperty('frame', cv.WND_PROP_FULLSCREEN, cv.WINDOW_FULLSCREEN)
+cv.namedWindow('frame', cv.WND_PROP_FULLSCREEN)
+cv.setWindowProperty('frame', cv.WND_PROP_FULLSCREEN, cv.WINDOW_FULLSCREEN)
+
+# setting up video recording 
+if record:
+    width= int(cap.get(cv.CAP_PROP_FRAME_WIDTH))
+    height= int(cap.get(cv.CAP_PROP_FRAME_HEIGHT))
+    writer= cv.VideoWriter('output.avi', cv.VideoWriter_fourcc('M', 'J', 'P', 'G'), 15, (width,height))
 
 while True:
     time_elapsed = time.time() - prev
@@ -93,6 +101,10 @@ while True:
 
         # Display the resulting frame
         cv.imshow('frame',frame)
+
+        if record:
+            # save frame
+            writer.write(frame)
 
     if cv.waitKey(1) == ord('q'):
         break
