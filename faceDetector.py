@@ -88,7 +88,8 @@ def getFace(frame, verbose=True, update_colours=False):
         
         #draw contours
         if verbose: 
-            cv.drawContours(blank, contours=contours, contourIdx=i, color=(0, 255, 0), thickness=2)
+            colour = tuple([int(i) for i in np.random.randint(0, 255,size=3)])
+            cv.drawContours(blank, contours=contours, contourIdx=i, color=colour, thickness=2)
             cv.imshow('Contours', blank)
 
     # group cubies by area to get main face
@@ -193,7 +194,7 @@ def getState(frame):
 if __name__ == '__main__':
 
     update_colours  = False
-    verbose = False
+    verbose = True
     array = []
     faceNum = 0
     consistentCount = 0

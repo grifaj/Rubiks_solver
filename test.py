@@ -1,14 +1,8 @@
-import csv
+total = [0, 6, 27, 120, 534, 2256, 8969, 33058, 114149, 360508, 930588, 1350852, 782536, 90280, 276]
 
-# Open the CSV file
-with open('colour_data.txt', 'r') as input_file:
-    # Read the CSV file
-    reader = csv.reader(input_file)
-    # Remove the third column
-    new_rows = [[row[1], row[2], row[4]] for row in reader]
+avg = 0
+for i in range(len(total)):
+    avg = avg + total[i]*i
 
-# Open a new CSV file
-with open('output.csv', 'w', newline='') as output_file:
-    # Write the new rows to the output file
-    writer = csv.writer(output_file)
-    writer.writerows(new_rows)
+avg = avg/sum(total)
+print(avg)
