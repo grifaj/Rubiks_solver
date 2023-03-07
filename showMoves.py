@@ -101,6 +101,8 @@ def show_exp_move(frame, colours):
 
     side_len = 50
     w = frame.shape[1] - side_len*2
+    cv.putText(img=frame, text='Expected', org=(w -10, 125), fontFace=cv.FONT_HERSHEY_TRIPLEX, fontScale=0.7, color=(0, 255, 0),thickness=1)
+    cv.putText(img=frame, text='face', org=(w+25, 145), fontFace=cv.FONT_HERSHEY_TRIPLEX, fontScale=0.7, color=(0, 255, 0),thickness=1)
     for i in range(len(colours)):
         for j in range(len(colours[0])):
             cv.rectangle(frame, (i*side_len+w,j*side_len),((i+1)*side_len+w,(j+1)*side_len), colour_dict[colours[j][i]],-1)
@@ -113,18 +115,9 @@ def show_moves(frame):
         print('cube solved')
         return True
 
-    result = getFace(frame, verbose=False)
-    if result is not None:
-        [centres, face] = result
-    else:
-        return False
-
     cube = RubiksCube(state=globals.state)
     previous = RubiksCube(state=globals.state) # for orignal state
     move = globals.moves[globals.moveCount]
-
-    # draw move on arrow
-    putArrow(frame, move, centres)
     
     # check if front face is what is expected then show next move
     cube.move2func(move)
@@ -132,6 +125,16 @@ def show_moves(frame):
     if type(expected) != list:
             expected = expected.tolist()
     show_exp_move(frame, expected)
+
+    result = getFace(frame, verbose=False)
+    if result is not None:
+        [centres, face] = result
+    else:
+        return False
+    
+     # draw move on arrow
+    putArrow(frame, move, centres)
+
     if face == expected:
         globals.moveCount +=1
         print('move made',globals.moveCount)
