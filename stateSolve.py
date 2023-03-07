@@ -61,6 +61,26 @@ def ida_star( state, g, bound, path):
             min_cost = cost
     return False, min_cost, path
 
+def checkFront(moves, cube):
+    new_moves  = []
+    for move in moves:     
+        prev =cube.getArray()[0]
+        if type(prev) != list:
+            prev = prev.tolist()
+        cube.move2func(move)
+        expected =cube.getArray()[0].tolist()
+        if prev == expected:
+            # add y rotation
+            new_moves.append(('y', 'c'))
+            if move[1] == 'c':
+                new_moves.append(('l', 'c'))
+            else:
+                new_moves.append(('l', 'ac'))
+        else:
+            new_moves.append(move)
+    
+    return new_moves
+
 def solve_cube(cube):
     # check heuristic is loaded
     if globals.heuristic is None:
@@ -72,9 +92,13 @@ def solve_cube(cube):
     bound = getHeuristic(cube)
     while True:
         status, cost, path = ida_star(cube.stringify(), 0, bound, path)
-        if status: return path
+        if status: break
         bound = cost
-        
+    
+    # add rotation if front move is unchanging
+    moves = checkFront(path, cube)
+
+    return moves
 
 # database building code hoplefuly no longer needed
 def build_heuristic_db():

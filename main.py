@@ -7,25 +7,6 @@ from faceDetector import getState
 from showMoves import show_moves
 import globals
 
-def checkFront(moves, cube):
-    new_moves  = []
-    for move in moves:     
-        prev =cube.getArray()[0]
-        if type(prev) != list:
-            prev = prev.tolist()
-        cube.move2func(move)
-        expected =cube.getArray()[0].tolist()
-        if prev == expected:
-            #check not part of f2 move
-            if new_moves[-2][1] != 'y':
-                new_moves.append(('y', 'c'))
-            new_moves.append(('l', move[1]))
-        else:
-            new_moves.append(move)
-    
-    return new_moves
-
-
 # main starting function
 def run(frame):
     global state
@@ -45,9 +26,6 @@ def run(frame):
         # get moves from state solve
         print('loading solved')
         moves = solve_cube(cube)
-
-        # add rotation if front move is unchanging
-        moves = checkFront(moves, cube)
 
         globals.moves = moves
         print(moves)
