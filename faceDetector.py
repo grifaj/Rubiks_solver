@@ -57,8 +57,8 @@ def getFace(frame, verbose=True, update_colours=False):
     
     # blur and get edges from frame
     blur = cv.blur(frame,(3,3))
-    canny = cv.Canny(blur, 50, 60, L2gradient = True) #55, 100
-
+    canny = cv.Canny(blur, 10, 50, L2gradient = True) #50, 60
+    
     if verbose: cv.imshow('edges',canny)
 
     # get contours
@@ -82,7 +82,7 @@ def getFace(frame, verbose=True, update_colours=False):
         squareness = cv.norm(((perimeter / 4) * (perimeter / 4)) - area)
 
         # likely candidate for piece
-        if parent == -1 and area > 750 and area < 6000 and squareness < 210:
+        if parent == -1 and area > 750 and area < 6000 and squareness < 180:
             # create new cubie object
             cubies.append(Cubie(frame=frame, contour=contour))
         
@@ -108,7 +108,7 @@ def getFace(frame, verbose=True, update_colours=False):
         # select main face
         cubies = [c[0] for c in groups[0]]
 
-    if len(cubies) == 4:
+    if len(cubies)  == 4:
         # order colours by contour location 
         centres, colours = order_faces(cubies)
 
@@ -193,8 +193,8 @@ def getState(frame):
         
 if __name__ == '__main__':
 
-    update_colours  = False
-    verbose = True
+    update_colours  = True
+    verbose = False
     array = []
     faceNum = 0
     consistentCount = 0

@@ -55,6 +55,9 @@ for i in range(6):
     idx = [p for p in range(len(y)) if y[p] == i]
     plt.scatter(X[idx, 0], X[idx, 1], c=colours[i], s=20, edgecolor='k')
 
+plt.title('Knn boundries for Rubik\'s cube colours')
+plt.xlabel('a channel: Red/Green Value')
+plt.ylabel('b channel: Blue/Yellow Value')
 plt.show()
 
 # Save the classifier to disk

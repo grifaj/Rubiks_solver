@@ -70,12 +70,13 @@ def checkFront(moves, cube):
         cube.move2func(move)
         expected =cube.getArray()[0].tolist()
         if prev == expected:
-            # add y rotation
+            # add y rotation and corrected move
             new_moves.append(('y', 'c'))
-            if move[1] == 'c':
-                new_moves.append(('l', 'c'))
-            else:
-                new_moves.append(('l', 'ac'))
+            new_moves.append(('l',move[1]))
+            #check if was f2 move a bit hacky
+            if len(new_moves) > 1 and moves[len(new_moves)-1] == move:
+                new_moves.append(('l',move[1]))
+                break
         else:
             new_moves.append(move)
     

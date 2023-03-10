@@ -7,6 +7,14 @@ from faceDetector import getState
 from showMoves import show_moves
 import globals
 
+
+def checkState(state):
+    colours = ['w', 'r', 'b', 'o', 'g', 'y']
+    for c in colours:
+        if state.count(c) != 4:
+            return False
+    return True
+
 # main starting function
 def run(frame):
     global state
@@ -16,6 +24,11 @@ def run(frame):
     # get state from frame
     if state is None:
         state = getState(frame)
+        if state is not None and not checkState(state):
+            print('impossible state, redoing scan')
+            state = None
+            globals.init(saveHeuristic=True)
+        # check state is possible by counting colours
         globals.state = state
 
     elif moves is None:

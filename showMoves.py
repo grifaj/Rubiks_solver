@@ -84,14 +84,14 @@ def putArrow(frame, move, centres):
             end = temp
         cv.arrowedLine(frame, start, end, (255,0,255),6, tipLength = 0.2)
 
-def getWrongMove(cube):
+def getWrongMove(face, previous):
     direction = ['c', 'ac']
     moves = ['f', 'u', 'd', 'l', 'r', 'x' ,'y', 'z']
     for m in moves:
         for d in direction:
-            tmp = RubiksCube(state=cube.stringify())
+            tmp = RubiksCube(state=previous.stringify())
             tmp.move2func((m,d))
-            if tmp.getArray()[0] == cube.getArray()[0]:
+            if tmp.getArray()[0].tolist() == face:
                 return (m,d)
 
     return None
@@ -122,8 +122,7 @@ def show_moves(frame):
     # check if front face is what is expected then show next move
     cube.move2func(move)
     expected =cube.getArray()[0]
-    if type(expected) != list:
-            expected = expected.tolist()
+    if type(expected) != list: expected = expected.tolist()
     show_exp_move(frame, expected)
 
     result = getFace(frame, verbose=False)
@@ -142,17 +141,17 @@ def show_moves(frame):
         #cube.printCube()
     
     else:
-        # check what went wrong
-        if face == previous.getArray[0]: # waiting for move to be made
-            print('waiting for move, all is well')
         # generate expected faces of different moves that could have been made and find wrong move
-        wrongMove = getWrongMove(cube)
-        if wrongMove is not None:
-            # regenerate moves based on new state
-            previous.move2func(wrongMove)
-            globals.state = previous.stringify()
-            globals.moves = solve_cube(previous.stringify())
-            globals.moveCount = 0
-            
+        if face != previous.getArray()[0]:
+            wrongMove = getWrongMove(face, previous)
+            if wrongMove is not None:
+                # regenerate moves based on new state
+                print('wrong move made',wrongMove)
+                previous.move2func(wrongMove)
+                globals.state = previous.stringify()
+                globals.moves = solve_cube(previous)
+                print(globals.moves)
+                globals.moveCount = 0
+        
 
     return False
