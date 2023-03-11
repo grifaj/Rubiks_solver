@@ -67,17 +67,17 @@ def checkFront(moves, cube):
         prev =cube.getArray()[0]
         if type(prev) != list:
             prev = prev.tolist()
-        cube.move2func(move)
-        expected =cube.getArray()[0].tolist()
-        if prev == expected:
+        if len(set.union(*map(set,prev))) == 1 and move[0] == 'f':
             # add y rotation and corrected move
             new_moves.append(('y', 'c'))
             new_moves.append(('l',move[1]))
-            #check if was f2 move a bit hacky
-            if len(new_moves) > 1 and moves[len(new_moves)-1] == move:
-                new_moves.append(('l',move[1]))
-                break
+
+            cube.move2func(new_moves[-2])
+            cube.move2func(new_moves[-1])
+            new_moves = new_moves + solve_cube(cube)
+            return new_moves
         else:
+            cube.move2func(move)
             new_moves.append(move)
     
     return new_moves
@@ -96,6 +96,7 @@ def solve_cube(cube):
         if status: break
         bound = cost
     
+    print(path)
     # add rotation if front move is unchanging
     moves = checkFront(path, cube)
 
