@@ -1,8 +1,18 @@
-total = [0, 6, 27, 120, 534, 2256, 8969, 33058, 114149, 360508, 930588, 1350852, 782536, 90280, 276]
+import json
 
-avg = 0
-for i in range(len(total)):
-    avg = avg + total[i]*i
+path = "C:\\Users\\Alfie\\Documents\\uni_work\\year3\\cs310\\github\\Rubiks_solver\\"
+with open(path+'heuristic.json') as f:
+    heuristic = json.load(f)
 
-avg = avg/sum(total)
-print(avg)
+# find all states where two sides are the same 
+heuristic = list(heuristic.keys())
+count = 0
+for state in heuristic:
+    split = []
+    for i in range(0,len(state),4):
+        split.append(state[i:i+4])
+    if len(set(split)) != len(split):
+        count +=1
+
+print(count)
+    

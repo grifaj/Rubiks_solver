@@ -2,18 +2,10 @@ import cv2 as cv
 import numpy as np
 from cubeMini import RubiksCube
 import time
-from stateSolve import solve_cube
+from stateSolve import solve_cube, colour_independant
 from faceDetector import getState
 from showMoves import show_moves
 import globals
-
-
-def checkState(state):
-    colours = ['w', 'r', 'b', 'o', 'g', 'y']
-    for c in colours:
-        if state.count(c) != 4:
-            return False
-    return True
 
 # main starting function
 def run(frame):
@@ -24,7 +16,8 @@ def run(frame):
     # get state from frame
     if state is None:
         state = getState(frame)
-        if state is not None and not checkState(state):
+        # check state is possible
+        if state is not None and not colour_independant(state) in globals.heuristic:
             print('impossible state, redoing scan')
             state = None
             globals.init(saveHeuristic=True)
