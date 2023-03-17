@@ -193,7 +193,7 @@ def getState(frame):
         
 if __name__ == '__main__':
 
-    update_colours  = True
+    update_colours  = False
     verbose = False
     array = []
     faceNum = 0
