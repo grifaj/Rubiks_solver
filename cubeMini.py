@@ -114,8 +114,12 @@ class RubiksCube:
             self.down() if d == 'c' else self.down_prime()
         if f == 'b':
             self.back() if d == 'c' else self.back_prime()
+        if f == 'x':
+            self.x() if d == 'c' else self.x_prime()
         if f == 'y':
             self.y() if d == 'c' else self.y_prime()
+        if f == 'z':
+            self.z() if d == 'c' else self.z_prime()
         
 
 

@@ -1,29 +1,69 @@
-import numpy as np
 from cube import RubiksCube
+import numpy as np
 import json
-from tqdm import tqdm 
-from queue import Queue
-from threading import Thread, Lock
-import globals
-import kociemba   
 
-def colour_independant(state):
-    num = 0
-    for i in range(len(state)):
-        if not state[i].isnumeric():
-            state = state.replace(state[i],str(num))
-            num+=1
-    return state
+ # convert cube to slices to calculate manhattan distance, (put in cube)?   
+def face2pieces(cube):
+    cube = np.array(cube)
+    slices = [[[[] for _ in range(3)] for _ in range(3)] for _ in range(3)]
+    for i in range(3):
+        slices[0][0][i] = [cube[3,2,i],(cube[5,0,2] if i == 0 else (cube[4,0,0] if i == 2 else None)),cube[0,0,i]] # top row first slice
+        slices[0][1][i] = [(cube[5,1,2] if i == 0 else (cube[4,1,0] if i == 2 else None)),cube[0,1,i]] # middle row first slice
+        slices[0][2][i] =  [cube[2,0,i], (cube[5,2,2] if i ==0 else (cube[4,2,0] if i == 2 else None)),cube[0,2,i]] # bottom row first slice
 
-def getHeuristic(cube):
-    cube_str = colour_independant(cube.stringify())
-    if cube_str in globals.heuristic:
-        return globals.heuristic[cube_str]
+        slices[1][0][i] = [cube[3,1,i],(cube[5,0,1] if i == 0 else (cube[4,0,1] if i == 2 else None))] # top row middle slice
+        slices[1][2][i] = [cube[2,1,i], (cube[5,2,1] if i == 0 else (cube[4,2,1] if i == 2 else None))] #bottom row middle slice
 
-    return 14
+        slices[2][0][i] = [cube[3,0,i], (cube[5,0,0] if i == 0 else (cube[4,0,2] if i == 2 else None)), cube[1,0,2-i]] # top row back slice
+        slices[2][1][i] = [(cube[5,1,0] if i == 0 else (cube[4,1,2] if i == 2 else None)), cube[1,1,2-i]] # middle row back slice
+        slices[2][2][i] = [cube[2,2,i], (cube[5,2,0] if i == 0 else (cube[4,2,2] if i == 2 else None)), cube[1,2,2-i]] # bottom row back slice
+    
+    slices[1][1] = [[cube[5,1,1]],[],[cube[4,1,1]]] # middle row middle slice
+
+    remove_None(slices)
+    return slices
+
+# remove none placeholders from slices
+def remove_None(cube):
+    for a in cube:
+        for b in a:
+            for c in b:
+                try:
+                    c.remove(None)
+                except ValueError:
+                    pass
+
+def manhattan_distance(cube):
+    cube = face2pieces(cube.getArray())
+    solved_cube = face2pieces(RubiksCube().getArray())
+    edge_dist = 0
+    corner_dist = 0
+
+    for layer in range(3):
+        for row in range(3):
+            for piece in range(3):
+                if cube[layer][row][piece] != solved_cube[layer][row][piece]:
+                    solved_pos = find_piece(solved_cube, cube[layer][row][piece])
+                    dist = abs(layer - solved_pos[0]) + abs(row - solved_pos[1]) + abs(piece - solved_pos[2])
+                    if len(cube[layer][row][piece]) == 3:
+                        corner_dist += dist
+                    elif len(cube[layer][row][piece]) == 2:
+                        edge_dist += dist
+                    else:
+                        print('should be 0:',dist)
+
+    return int(edge_dist/4 + corner_dist/4) 
+
+def find_piece(cube, p):
+    for layer in range(3):
+        for row in range(3):
+            for piece in range(3):
+                if set(cube[layer][row][piece]) == set(p):
+                    return [layer, row, piece]
 
 def generate_next_states(state):
     next_actions = []
+    estimated_dist = []
     for f in ['u','l','r','f','d','b']:
         for d in ['c', 'ac']:
             cube = RubiksCube(state=state)
@@ -42,12 +82,10 @@ def generate_next_states(state):
             next_actions.append((cube.stringify(),(f,d)))
     return next_actions
 
-
-
 # iterative deepen through cube states
 def ida_star( state, g, bound, path):
     cube = RubiksCube(state=state)
-    f = g + getHeuristic(cube)
+    f = g + manhattan_distance(cube)
     if f > bound:
         return False, f, path
     if cube.solved():
@@ -61,117 +99,53 @@ def ida_star( state, g, bound, path):
             min_cost = cost
     return False, min_cost, path
 
-def solve_cube(cube):
-    # check heuristic is loaded
-    '''if globals.heuristic is None:
-        path = '/home/grifaj/Documents/y3project/Rubiks_solver/'
-        with open(path+'heuristic.json') as f:
-            globals.heuristic = json.load(f)'''
+def checkFront(moves, cube):
+    new_moves  = []
+    for move in moves:     
+        prev =cube.getArray()[0]
+        if type(prev) != list:
+            prev = prev.tolist()
+        if len(set.union(*map(set,prev))) == 1 and move[0] == 'f':
+            # add y rotation and corrected move
+            new_moves.append(('y', 'c'))
+            new_moves.append(('l',move[1]))
 
+            cube.move2func(new_moves[-2])
+            cube.move2func(new_moves[-1])
+            new_moves = new_moves + solve_cube(cube)
+            return new_moves
+        else:
+            cube.move2func(move)
+            new_moves.append(move)
+    
+    return new_moves
+
+def solve_cube(cube):
     path = [] 
-    bound = getHeuristic(cube)
+    bound = manhattan_distance(cube)
     while True:
         status, cost, path = ida_star(cube.stringify(), 0, bound, path)
-        if status: return path
+        if status: break
         bound = cost
-        
-def convertBack(string):
-    faces = [[],[],[],[],[],[]]
-    order = [3,4,0,2,5,1]
-    for i in range(6):
-        face = string[i*9:(i+1)*9]
-        out_face = []
-        for j in range(3):
-            row = face[j*3:(j+1)*3]
-            out_face.append(list(row))
-        faces[order[i]] = out_face
-
-    cube = RubiksCube(array=faces)
-    cube.printCube()
-
-def solve_cube_kociemba(cube):
-    # get colour mapping
-    symbols =['F','B','D','U','R','L'] 
-    colours = []
-    for i in range(6):
-        colours.append(cube.array[i][1][1])
-
-    cube_string = ''
-    order = [3,4,0,2,5,1]
-    for i in order:
-        for j in range(3):
-            for k in range(3):
-                cube_string += symbols[colours.index(cube.array[i][j][k])]
     
-    #convertBack(cube_string)
+    # add rotation if front move is unchanging
+    #moves = checkFront(path, cube)
 
-    solved = kociemba.solve(cube_string)
-
-    # convert soln back to my notation
-    out = []
-    solved = solved.split(' ')
-    for move in solved:
-        direction = 'c' if (len(move) == 1 or move[1] == '2') else 'ac'
-        m = (move[0].lower(), direction)
-        out.append(m)
-        if move[-1] == '2':
-            out.append(m)
-
-    return out       
-
-# database building code hoplefuly no longer needed
-def build_heuristic_db():
-    max_moves  = 10
-    cube = RubiksCube()
-    state = cube.stringify()
-    heuristic = {colour_independant(state): 0}
-    #total = [0, 6, 27, 120, 534, 2256, 8969, 33058, 114149, 360508, 930588, 1350852, 782536, 90280, 276]
-    total = [18, 243, 3240, 43254, 577368, 7706988, 102876480, 1373243544, 18330699168, 244686773808, 3266193870720, 43598688377184, 581975750199168, 7768485393179328, 103697388221736960, 1384201395738071424, 18476969736848122368, 246639261965462754048]
-    pbar = tqdm(total=sum(total[:max_moves+1]))
-
-    # create queue
-    que = Queue()
-    que.put((state, 0))
-    lock = Lock()
-    
-    # Start the worker threads
-    num_threads = 6
-    threads = []
-    for _ in range(num_threads):
-        t = Thread(target=worker, args=(que, max_moves, heuristic, pbar, lock))
-        t.start()
-        threads.append(t)
-
-    for t in threads:
-        t.join()
-
-    print('dumping to file')
-    # dump dicitonary to file
-    with open('heuristic.json', 'w', encoding='utf-8') as f:
-        json.dump(heuristic, f, ensure_ascii=False, indent=4)
-    f.close()
-    pbar.close()
-
-def worker(que, max_moves, heuristic, pbar, lock):
-    while True:
-        with lock:
-            if que.empty():
-                return
-            s, d = que.get()
-        if d >= max_moves:
-            continue
-        for next_action in generate_next_states(s):
-            a_str = next_action[0]
-            # convert to colour independant representation
-            a_str_num = colour_independant(a_str)
-            if a_str_num not in heuristic or heuristic[a_str_num] > d + 1:
-                heuristic[a_str_num] = d + 1
-                que.put((a_str, d+1))
-                pbar.update(1)
+    return path
 
 if __name__ == '__main__':
+    '''for i in range(100):
+        cube = RubiksCube()
+        print('moves', cube.shuffle(i))
+        soln = solve_cube(cube)
+        print('soln', soln)   
+        print(len(soln))
+        print()'''
+
     cube = RubiksCube()
-    print(cube.shuffle(15))
-    cube.printCube()
-    solve_cube_kociemba(cube)
-    #build_heuristic_db()
+    moves = [('u', 'c'), ('l', 'ac'), ('d', 'ac'), ('l', 'c'), ('l', 'ac'), ('d', 'c'), ('r', 'c'), ('l', 'ac'), ('r', 'c')]
+    for move in moves:
+        cube.move2func(move)
+    
+    soln = solve_cube(cube)
+    print('soln', soln)   

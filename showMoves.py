@@ -3,6 +3,7 @@ import numpy as np
 from cube import RubiksCube
 from faceDetector import getFace
 import globals
+import main
 
 # returns the centre of all the centres
 def getCentre(centres):
@@ -85,6 +86,18 @@ def putArrow(frame, move, centres):
             end = temp
         cv.arrowedLine(frame, start, end, (255,0,255),6, tipLength = 0.2)
 
+def getWrongMove(cube):
+    direction = ['c', 'ac']
+    moves = ['f', 'u', 'd', 'l', 'r', 'x' ,'y', 'z']
+    for m in moves:
+        for d in direction:
+            tmp = RubiksCube(state=cube.stringify())
+            tmp.move2func((m,d))
+            if tmp.getArray()[0] == cube.getArray()[0]:
+                return (m,d)
+
+    return None
+
 
 def show_exp_move(frame, colours):
     colour_dict = {'w':(255,255,255), 'r':(20,18,137), 'b':(172,72,13), 'o':(37,85,255), 'g':(76,155,25), 'y':(47,213,254)}
@@ -106,6 +119,7 @@ def show_moves(frame):
     result = getFace(frame, verbose=False)
 
     cube = RubiksCube(state=globals.state)
+    previous = RubiksCube(state=cube.stringify())
     move = globals.moves[globals.moveCount]
     
     # check if front face is what is expected then show next move
@@ -129,5 +143,17 @@ def show_moves(frame):
         print('move made',globals.moveCount)
         globals.state = cube.stringify()
         #cube.printCube()
-
+    else:
+        # check what went wrong
+        if face == previous.getArray[0]: # waiting for move to be made
+            print('waiting for move, all is well')
+        # generate expected faces of different moves that could have been made and find wrong move
+        wrongMove = getWrongMove(cube)
+        if wrongMove is not None:
+            # regenerate moves based on new state
+            previous.move2func(wrongMove)
+            globals.state = previous.stringify()
+            globals.moves = None
+            globals.moveCount = 0
+            
     return False
