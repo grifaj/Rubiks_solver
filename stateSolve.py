@@ -102,7 +102,7 @@ def solve_cube(cube):
 
     return moves
 
-# database building code hoplefuly no longer needed
+# database building code hopefuly no longer needed
 def build_heuristic_db():
     max_moves  = 13
     cube = RubiksCube()

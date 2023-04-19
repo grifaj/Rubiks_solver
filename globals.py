@@ -1,5 +1,5 @@
 from cubeMini import RubiksCube
-import json
+import h5py
 
 def init(saveHeuristic=False):
     print('being used')
@@ -22,9 +22,11 @@ def init(saveHeuristic=False):
     # globals for state solve
     if not saveHeuristic:
         global heuristic
-        path = '/home/grifaj/Documents/y3project/Rubiks_solver/'
-        with open(path+'heuristic.json') as f:
-            heuristic = json.load(f)
+        # Open the HDF5 file for reading
+        h = h5py.File('heuristic.hdf5', 'r')
+        data = h['data'][:]
+        heuristic = {row[0].decode('utf-8'): row[1] for row in data}
+        h.close()
 
     # globals for show moves
     global moves

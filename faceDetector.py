@@ -194,7 +194,7 @@ def getState(frame):
 if __name__ == '__main__':
 
     update_colours  = False
-    verbose = False
+    verbose = True
     array = []
     faceNum = 0
     consistentCount = 0
