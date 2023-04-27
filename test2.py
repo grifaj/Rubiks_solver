@@ -2,6 +2,8 @@ import globals
 import kociemba  
 from cube import RubiksCube 
 import numpy as np 
+import random
+import matplotlib.pyplot as plt
 
 
 def convertBack(string):
@@ -48,11 +50,22 @@ def solve_cube_kociemba(cube):
 
     return out       
 
-
 if __name__ == '__main__':
     solns = []
-    for i in range(100):
+    for i in range(1000):
         cube = RubiksCube()
-        cube.shuffle(5)
+        rand = random.randint(0,35)
+        cube.shuffle(rand)
         solns.append(len(solve_cube_kociemba(cube)))
-    print(np.mean(solns))
+
+    print('huh')
+    # An "interface" to matplotlib.axes.Axes.hist() method
+    n, bins, patches = plt.hist(x=solns, bins='auto', color='#0504aa', alpha=0.7, rwidth=0.85)
+    plt.grid(axis='y', alpha=0.75)
+    plt.xlabel('Length of solution')
+    plt.ylabel('Frequency')
+    plt.title('Bar chart of 3x3 solution lengths')
+    maxfreq = n.max()
+    # Set a clean upper y-axis limit.
+    plt.ylim(ymax=np.ceil(maxfreq / 10) * 10 if maxfreq % 10 else maxfreq + 10)
+    plt.show()
