@@ -3,7 +3,6 @@ import numpy as np
 from cube import RubiksCube
 from faceDetector import getFace
 import globals
-import main
 
 # returns the centre of all the centres
 def getCentre(centres):
@@ -93,7 +92,7 @@ def getWrongMove(cube):
         for d in direction:
             tmp = RubiksCube(state=cube.stringify())
             tmp.move2func((m,d))
-            if tmp.getArray()[0] == cube.getArray()[0]:
+            if listConvert(tmp.getArray()[0]) == listConvert(cube.getArray()[0]):
                 return (m,d)
 
     return None
@@ -110,6 +109,11 @@ def show_exp_move(frame, colours):
 
     return frame
 
+def listConvert(array):
+    if type(array) != list:
+            array = array.tolist()
+    return array
+
 def show_moves(frame):
 
     if globals.moveCount == len(globals.moves):
@@ -124,9 +128,7 @@ def show_moves(frame):
     
     # check if front face is what is expected then show next move
     cube.move2func(move)
-    expected =cube.getArray()[0]
-    if type(expected) != list:
-            expected = expected.tolist()
+    expected =listConvert(cube.getArray()[0])
     show_exp_move(frame, expected)
 
     # check face was returned
@@ -145,15 +147,16 @@ def show_moves(frame):
         #cube.printCube()
     else:
         # check what went wrong
-        if face == previous.getArray[0]: # waiting for move to be made
+        if face == previous.getArray()[0]: # waiting for move to be made
             print('waiting for move, all is well')
         # generate expected faces of different moves that could have been made and find wrong move
         wrongMove = getWrongMove(cube)
         if wrongMove is not None:
+            print("wrong move made")
             # regenerate moves based on new state
-            previous.move2func(wrongMove)
-            globals.state = previous.stringify()
-            globals.moves = None
-            globals.moveCount = 0
+            #previous.move2func(wrongMove)
+            #globals.state = previous.stringify()
+            #globals.moves = None
+            #globals.moveCount = 0
             
     return False

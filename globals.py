@@ -1,5 +1,4 @@
 from cube import RubiksCube
-import json
 
 def init():
     print('being used')
@@ -18,12 +17,6 @@ def init():
     lastScan = []
     global detectedCube
     detectedCube = RubiksCube(state='xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx')
-
-    # globals for state solve
-    '''global heuristic
-    path = '/home/grifaj/Documents/y3project/Rubiks_solver/'
-    with open(path+'heuristic.json') as f:
-        heuristic = json.load(f)'''
 
     # globals for show moves
     global moves

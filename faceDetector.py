@@ -52,7 +52,7 @@ def order_faces(cubies):
     return centres, colours
 
 # returns data on the shown face
-def getFace(frame, verbose=True, update_colours=False):
+def getFace(frame, verbose=False, update_colours=False):
     
     # blur and get edges from frame
     blur = cv.blur(frame,(3,3))
@@ -227,7 +227,7 @@ if __name__ == '__main__':
             prev = time.time()
 
             ## per frame operations ##
-            colours = getFace(frame, update_colours=update_colours, verbose=True)
+            colours = getFace(frame, update_colours=update_colours)
 
             colours_labels = ['w','r','b','o','g','y']
             scan_time = 10
