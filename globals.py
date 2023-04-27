@@ -18,6 +18,8 @@ def init():
     lastScan = []
     global detectedCube
     detectedCube = RubiksCube(state='xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx')
+    global colours 
+    colours = []
 
     # globals for state solve
     global heuristic
