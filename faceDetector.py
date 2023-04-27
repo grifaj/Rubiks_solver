@@ -157,7 +157,53 @@ def showRotation(frame, centres):
             globals.detectedCube.z_prime()
             globals.rotateFlag = False
 
+def placeCross(frame, centres):
+    cv.line(frame, centres[0], centres[8], (255,0,255),6)
+    cv.line(frame, centres[2], centres[6], (255,0,255),6)
+
+
 def getState(frame):
+    # state complete
+    if globals.faceNum == 6:
+        print('done')
+        return globals.detectedCube.stringify()
+
+    # get colours of displayed face
+    result = getFace(frame, verbose=False)
+    if result is not None:
+        [centres, face] = result
+    else:
+        return
+    
+    centre_face = face[1][1]
+    colours = ["w", "y", "r", "o", "b", "g"] 
+
+    # if face is new face add to state
+    if (globals.colours == [] or centre_face not  in globals.colours) and globals.consistentCount > 10:
+        globals.colours.append(centre_face)
+        globals.detectedCube.array[colours.index(centre_face)] = face
+        globals.detectedCube.printCube()
+        globals.faceNum +=1
+        globals.rotateFlag = True
+        print('new face scanned',globals.faceNum)
+        globals.consistentCount = 0
+    
+    # check if face matches last seen face
+    elif face == globals.previousFace and (globals.colours == [] or centre_face not  in globals.colours):
+        globals.consistentCount +=1
+    else:
+        globals.consistentCount = 0
+
+    # place cross on cube
+    if centre_face in globals.lastScan:
+        # give instruction for rotation
+        #showRotation(frame, centres)
+        placeCross(frame, centres)
+
+    # set current face to previous
+    globals.previousFace = face
+
+'''def getState(frame):
     # state complete
     if globals.faceNum == 6:
         print('done')
@@ -191,7 +237,7 @@ def getState(frame):
         showRotation(frame, centres)
 
     # set current face to previous
-    globals.previousFace = face
+    globals.previousFace = face'''
         
 if __name__ == '__main__':
 
