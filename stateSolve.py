@@ -1,11 +1,9 @@
-import numpy as np
 from cubeMini import RubiksCube
-import json
 from tqdm import tqdm 
 from queue import Queue
 from threading import Thread, Lock
 import globals
-   
+import h5py
 
 def colour_independant(state):
     num = 0
@@ -85,9 +83,11 @@ def checkFront(moves, cube):
 def solve_cube(cube):
     # check heuristic is loaded
     if globals.heuristic is None:
-        path = '/home/grifaj/Documents/y3project/Rubiks_solver/'
-        with open(path+'heuristic.json') as f:
-            globals.heuristic = json.load(f)
+        # Open the HDF5 file for reading
+        h = h5py.File('heuristic.hdf5', 'r')
+        data = h['data'][:]
+        heuristic = {row[0].decode('utf-8'): row[1] for row in data}
+        h.close()
 
     path = [] 
     bound = getHeuristic(cube)
@@ -96,13 +96,12 @@ def solve_cube(cube):
         if status: break
         bound = cost
     
-    print(path)
     # add rotation if front move is unchanging
     moves = checkFront(path, cube)
 
     return moves
 
-# database building code hoplefuly no longer needed
+# database building code hopefuly no longer needed
 def build_heuristic_db():
     max_moves  = 13
     cube = RubiksCube()
@@ -129,8 +128,8 @@ def build_heuristic_db():
 
     print('dumping to file')
     # dump dicitonary to file
-    with open('heuristic.json', 'w', encoding='utf-8') as f:
-        json.dump(heuristic, f, ensure_ascii=False, indent=4)
+    with h5py.File("mytestfile.hdf5", "w") as f:
+        dset = f.create_dataset("mydataset", (100,), dtype='i')
     f.close()
     pbar.close()
 
