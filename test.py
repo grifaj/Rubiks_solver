@@ -1,26 +1,28 @@
-import cv2
+from cubeMini import RubiksCube
+import numpy as np
+from stateSolve import solve_cube
+import globals
+import matplotlib.pyplot as plt
+import time
 
-# Create a VideoCapture object to capture frames from the camera
-cap = cv2.VideoCapture(0)
+# intit globals
+globals.init()
+moves = []
+for i in range(1000):
+    cube = RubiksCube()
+    cube.shuffle(100)
+    move = solve_cube(cube)
+    moves.append(moves)
 
-# Loop over frames captured from the camera
-while True:
-    # Capture a frame from the camera
-    ret, frame = cap.read()
-
-    cv2.imshow('orignal frame', frame)
-    
-    # Apply binary thresholding to the image
-    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    ret, thresh = cv2.threshold(gray, 127, 255, cv2.THRESH_BINARY)
-    
-    # Display the resulting frame
-    cv2.imshow('Thresholded Frame', thresh)
-    
-    # Wait for a key press to exit the program
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
-
-# Release the VideoCapture object and close all windows
-cap.release()
-cv2.destroyAllWindows()
+print('huh')
+# An "interface" to matplotlib.axes.Axes.hist() method
+n, bins, patches = plt.hist(x=moves, bins='auto', color='#0504aa', alpha=0.7, rwidth=0.85)
+plt.grid(axis='y', alpha=0.75)
+plt.xlabel('Length of solution')
+plt.ylabel('Frequency')
+plt.title('Histogram of 2x2 solution lengths')
+maxfreq = n.max()
+# Set a clean upper y-axis limit.
+plt.ylim(ymax=np.ceil(maxfreq / 10) * 10 if maxfreq % 10 else maxfreq + 10)
+plt.show()
+plt.show()

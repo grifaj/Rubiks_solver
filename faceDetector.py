@@ -98,7 +98,7 @@ def getFace(frame, verbose=True, update_colours=False):
     
     # display groups as different colours
     if groups is not None:
-        group_colours = [(0,255,0),(255,0,255),(255,255,0),(0,255,255)]
+        group_colours = [(0,255,0),(255,0,255),(255,255,0),(0,255,255),(255,255,255),(0,0,0)]
         groups = sorted(groups, key=lambda x : len(x), reverse=True)
         #display current groups
         for i in range(len(groups)):
@@ -194,7 +194,7 @@ def getState(frame):
 if __name__ == '__main__':
 
     update_colours  = False
-    verbose = True
+    verbose = False
     array = []
     faceNum = 0
     consistentCount = 0

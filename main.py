@@ -1,5 +1,4 @@
 import cv2 as cv
-import numpy as np
 from cubeMini import RubiksCube
 import time
 from stateSolve import solve_cube
