@@ -71,7 +71,7 @@ class RubiksCube:
             l2 +=''.join(str(np.rot90(np.array(self.array[5]),-1)[j]))+ '  '
             l2 +=''.join(str(self.array[3][j]))+ '  '
             l2 +=''.join(str(np.rot90(np.array(self.array[4]))[j]))+ '  '
-            l2 +=''.join(str(self.array[2][1-j][::-1]))+ '  '
+            l2 +=''.join(str(self.array[2][2-j][::-1]))+ '  '
             l2 +='\n'
         l3 = '\n'.join(spacing + str(c) for c in self.array[0])
         print(f'{l1}\n{l2}\n{l3}')

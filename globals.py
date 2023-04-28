@@ -13,8 +13,6 @@ def init():
     previousFace = None
     global rotateFlag
     rotateFlag = False
-    global lastScan
-    lastScan = []
     global detectedCube
     detectedCube = RubiksCube(state='xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx')
     global colours 
