@@ -5,6 +5,7 @@ from cubie import Cubie
 import globals
 from cube import RubiksCube
 from orientFaces import orient
+import random
 
 # groups faces based on closness of anlges to each other
 def group_cubes(cubies, threshold):
@@ -56,9 +57,10 @@ def order_faces(cubies):
 # returns data on the shown face
 def getFace(frame, verbose=False, update_colours=False):
     
+    cv.imshow('orgin', frame)
     # blur and get edges from frame
     blur = cv.blur(frame,(3,3))
-    canny = cv.Canny(blur, 55, 100, L2gradient = True) #60, 100
+    canny = cv.Canny(blur, 50, 100, L2gradient = True) #60, 100
     
     if verbose: cv.imshow('edges',canny)
 
@@ -86,15 +88,15 @@ def getFace(frame, verbose=False, update_colours=False):
         approx = cv.approxPolyDP(contour, epsilon, True)
 
         # likely candidate for piece
-        if parent == -1 and area > 500 and area < 4000 and squareness < 210:
+        if area > 250 and area < 5000 and squareness < 250:
             # create new cubie object
             cubies.append(Cubie(frame=frame, contour=contour))
         
-        # display unused contours
-        elif parent == -1 and verbose:
-            cv.drawContours(blank, contours=contours, contourIdx=i, color=(0, 255, 0), thickness=2)
 
-        if verbose: cv.imshow('Contours', blank)
+        if verbose:
+            colour = random.sample(range(0, 255), 3)
+            cv.drawContours(blank, contours=contours, contourIdx=i, color=colour, thickness=2)
+            cv.imshow('Contours', blank)
 
     # group cubies by area to get main face
     avg = cv.mean(np.array([cv.contourArea(c.contour) for c in cubies]))[0]
