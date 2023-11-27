@@ -29,7 +29,7 @@ def run(frame):
         cube.printCube()
 
         # get moves from state solve
-        print('loading solved')
+        print('loading solution')
         moves = solve_cube(cube)
 
         globals.moves = moves

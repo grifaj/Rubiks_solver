@@ -2,7 +2,7 @@ from cubeMini import RubiksCube
 import h5py
 
 def init(saveHeuristic=False):
-    print('being used')
+    print('loading heuristic')
     # globals for face detector
     global update_colours
     update_colours  = False
